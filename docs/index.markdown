@@ -60,8 +60,9 @@ Joint bilateral filter {% include 3dged p=56 %}
 
 # Illumination and Shading
 
-* Illumination: The luminous flux transport from light sources to scene points, via direct and indirect paths.
-* Shading: process of assigning a color to a a pixel.
+* Illumination: ?The luminous flux transport from light sources to scene points, via direct and indirect paths?
+* Illumination model: Given the illumination incident at a point on a surface, quantifies the reflected light.
+* Shading: Process of assigning a color to a fragment.
 
 ## Light sources
 
@@ -71,6 +72,18 @@ Joint bilateral filter {% include 3dged p=56 %}
 * Spot (representation in deferred: cone)
 
 * Area (not supported by usual rendering technique)
+
+## Illumination models
+
+* Ambient Illumination: $$ I_a = K_a \times I_a $$
+* Diffuse (Lambertian) reflection: $$ I_d = K_d I_{light} cos(\theta) = K_d I_{light} (N \cdot L) $$
+* Specular reflection, Phong illumination model: $$ I_s = K_s I_{light} (R \cdot V)^n $$
+
+## Shading
+
+* Flat shading: Single intensity for each polygon.
+* Gouraud shading: Apply an illumination model at each vertex, linearly interpolates intensity values accross the surface.
+* Phong shading: Interpolate the normal vectors accross the surface, then apply an illumination model at each fragment.
 
 # Glossary
 
