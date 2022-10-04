@@ -46,20 +46,20 @@ Second pass is standard forward rendering, but fragments only iterate over light
 [Overview](https://www.3dgep.com/forward-plus/#Forward)
 
 ## Light pre-pass
-{% include 3dged p=15 %}
+{% include g3ded p=15 %}
 
 ## Multi-fragments
-Using bucket sort (and adaptive bucket depth peeling): {% include 3dged p=1 %}
+Using bucket sort (and adaptive bucket depth peeling): {% include g3ded p=1 %}
 
 # Techniques
 
 ## Upsampling
 
 ### Geometry aware
-Joint bilateral filter {% include 3dged p=56 %}
+Joint bilateral filter {% include g3ded p=56 %}
 
 ##  Level of detail (LOD)
-Brancheless geometry shader: {% include 3dged p=81 %}
+Brancheless geometry shader: {% include g3ded p=81 %}
 
 ## Neural Graphics
 The use of deep learning and neural networks for real-time computer graphics.
@@ -102,7 +102,7 @@ The use of deep learning and neural networks for real-time computer graphics.
 
 ## Texture mapping
 Pixel derivatives:
-* Hardware computation approaches analyse in {% include 3dged s=4.3 p=56 %}
+* Hardware computation approaches analyse in {% include g3ded s=4.3 p=56 %}
 
 ## Reduced resolution effects
 * Bloom
@@ -120,23 +120,23 @@ Pixel derivatives:
 ## View frustum culling (VFC)
 Intended to cull geometry which lies entirely outside of the view frustum.
 
-* Radar VFC: {% include 3dged p=77 s=5.3 %}
+* Radar VFC: {% include g3ded p=77 s=5.3 %}
 
 ## Occlusion culling
 Approaches:
 * Potentially Visible Set (PVS)
 * Portals (visibility through openings) and Antiportals (occlusion behind objects)
-* Hardware occlusion queries (OQs): {% include 3dged p=36 %}
-* Dynamic (based on HZB, bounded) visibility: {% include 3dged ch=3 p=35 %}
+* Hardware occlusion queries (OQs): {% include g3ded p=36 %}
+* Dynamic (based on HZB, bounded) visibility: {% include g3ded ch=3 p=35 %}
 
 ## Contribution culling
-Culling geometry when covering a small area (under a covera threashold): {% include 3dged p=48 %}
+Culling geometry when covering a small area (under a covera threashold): {% include g3ded p=48 %}
 
 ## Fragment culling
 * Early Z test
   * More efficient if the scene was sorted front to back (limit overdraw)
 
-* Z3 (useful for forward rendering): {% include 3dged ch=6 p=91 %}
+* Z3 (useful for forward rendering): {% include g3ded ch=6 p=91 %}
 
 ## Light culling
 * Frustum culling on the light volumes (for lights of known limited range).
@@ -151,10 +151,10 @@ Culling geometry when covering a small area (under a covera threashold): {% incl
 
 # Equations / Bases
 
-* Computing normals from heightmap: Sobel filter (mention in {% include 3dged p=191 %})
+* Computing normals from heightmap: Sobel filter (mention in {% include g3ded p=191 %})
 
-* Computing view-space Z from depth buffer and near/far planes: {% include 3dged p=26 eq=2.4 %}
-* Computing View-space X Y from screen-space X Y and view projection matrix: {% include 3dged p=26 eq=2.5 %}
+* Computing view-space Z from depth buffer and near/far planes: {% include g3ded p=26 eq=2.4 %}
+* Computing View-space X Y from screen-space X Y and view projection matrix: {% include g3ded p=26 eq=2.5 %}
 
 ## Representation
 
@@ -175,7 +175,7 @@ Culling geometry when covering a small area (under a covera threashold): {% incl
 - $$r$$: base radius
 
 ### Tangent-space (TBN)
-Representation via quaternions: {% include 3dged s=7.5 p=108 %}
+Representation via quaternions: {% include g3ded s=7.5 p=108 %}
 
 ## Culling equations
 
