@@ -1,0 +1,2 @@
+{% capture offset %}19{% endcapture %}
+[3D Engine Design (1st) p{{include.p}}](https://drive.google.com/uc?export=view&id=1v88Usjj1TrSawvlckH5nAB2y7W-DthHI#page={{ offset | plus: {{include.p}} }})
