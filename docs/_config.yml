@@ -33,7 +33,8 @@ url: "https://adnn.github.io" # the base hostname & protocol for your site, e.g.
 # Build settings
 #theme: minima
 #theme: jekyll-theme-architect
-remote_theme: pages-themes/architect@v0.2.0
+#remote_theme: pages-themes/architect@v0.2.0
+remote_theme: jekyll/minima@41b9769 # v2.5.1(latest atm) does not offer custom-head.html
 plugins:
 #- jekyll-feed ## Generate Atom (RSS-like) feed
 - jekyll-remote-theme

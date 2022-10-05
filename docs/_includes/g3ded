@@ -1,2 +1,1 @@
-{% capture offset %}19{% endcapture %}{% capture name %}3D Engine Design (1st){% endcapture %}
-[{{name}} {% if include.s %}sect. {{include.s}} {% elsif include.ch %}ch{{include.ch}} {% elsif include.eq %}eq ({{include.eq}}) {% endif %}p{{include.p}}](https://drive.google.com/uc?export=view&id=1v88Usjj1TrSawvlckH5nAB2y7W-DthHI#page={{ offset | plus: {{include.p}} }})
+{% capture offset %}19{% endcapture %}{% capture name %}3D Engine Design (1st){% endcapture %}[{{name}} {% if include.s %}sect. {{include.s}} {% elsif include.ch %}ch{{include.ch}} {% elsif include.eq %}eq ({{include.eq}}) {% endif %}p{{include.p}}](https://drive.google.com/uc?export=view&id=1v88Usjj1TrSawvlckH5nAB2y7W-DthHI#page={{ offset | plus: {{include.p}} }})
