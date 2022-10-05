@@ -32,9 +32,11 @@ url: "" # the base hostname & protocol for your site, e.g. http://example.com
   ## Commented out to remove the default page pollution
 # Build settings
 #theme: minima
-theme: jekyll-theme-architect
+#theme: jekyll-theme-architect
+remote_theme: pages-themes/architect@v0.2.0
 plugins:
 #- jekyll-feed ## Generate Atom (RSS-like) feed
+- jekyll-remote-theme
 
 # Exclude from processing.
 # The following items will not be processed, by default.
