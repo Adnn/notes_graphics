@@ -31,7 +31,8 @@ url: "" # the base hostname & protocol for your site, e.g. http://example.com
 
   ## Commented out to remove the default page pollution
 # Build settings
-theme: jekyll-theme-architect
+#theme: jekyll-theme-architect
+theme: architect
 plugins:
 #- jekyll-feed ## Generate Atom (RSS-like) feed
 
