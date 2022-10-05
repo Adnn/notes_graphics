@@ -5,7 +5,7 @@
 layout: home
 ---
 
-# Top-level rendering technique / rendering algorithms (not sure of the correct term)
+# Top-level rendering technique / rendering algorithms (TODO not sure of the correct term)
 
 ## Forward rendering
  Rasterize each geometric object in the scene, and during each fragment shading iterate each light in the scene. (description ignoring optimizations).
@@ -51,12 +51,24 @@ Second pass is standard forward rendering, but fragments only iterate over light
 ## Multi-fragments
 Using bucket sort (and adaptive bucket depth peeling): {% include g3ded p=1 %}
 
+# Ray Tracing (RT)
+
+* `Ray-casting`:
+  Non recursive RT, a ray is traced from the eye to the closest object. This is a backward simulation. Then shading takes place using traditional 3D CG shading models (e.g Phong). Essentially, rays are traced to solve visibility. Advantage over rasterization is ability to deal with non-planar surfaces (any surface for which we can compute a ray intersection).
+
+* `Whitted ray-tracing` (Turner Whitted):
+  Recursive RT, naturally handling reflections, refractions, shadows. This algorithm extended RT from a visibility only matter, to a matter of light transport.
+
+* `Path tracing`:
+  Monte carlo method which models global illumination. It inregrates over all illuminance arriving to a surface point, and reduce it via BRDF to determine how much goes toward the camera.
+
 # Techniques
 
 ## Upsampling
 
 ### Geometry aware
-Joint bilateral filter {% include g3ded p=56 %}
+* Joint bilateral filter {% include g3ded p=56 %}
+* [Neural Graphics](#neural_graphics)
 
 ##  Level of detail (LOD)
 Brancheless geometry shader: {% include g3ded p=81 %}
@@ -86,11 +98,38 @@ The use of deep learning and neural networks for real-time computer graphics.
 
 * Area (not supported by usual rendering technique)
 
+## Material properties
+
+**Photon-material interactions**:
+* absorption
+* reflection
+* transmission.
+
+Materials that do not transmit light are `opaque`.
+
+`Specular reflection` follows the `Law of reflection`: $$\theta_{i(ncident)} = \theta_{r(eflected)}. There is no scattering.
+
+`Diffuse reflection`: Reflections of radation that undergo scattering.
+
+`Transparency`: transmission without appreciable scattering of photons. i.e. It follows the Law of refraction (Snell Descartes law):
+  $$sin(\theta_1)/sin(\theta_2) = n_2/n_1$$
+
+`Translucency`: transmission **with** scattering.
+
+
 ## Illumination models
+
+### Classical
 
 * Ambient Illumination: $$ I_a = K_a \times I_a $$
 * Diffuse (Lambertian) reflection: $$ I_d = K_d I_{light} cos(\theta) = K_d I_{light} (N \cdot L) $$
 * Specular reflection, Phong illumination model: $$ I_s = K_s I_{light} (R \cdot V)^n $$
+
+### (TODO Are those considered illuminations models?)
+
+* `The Fresnel equations` (or `Fresnel coefficients)`: describe the reflection and transmission of light (or electromagnetic radiation in general) when incident on an interface between different optical media.
+* `The rendering equation` (Jim Kajia)
+
 
 ## Shading
 
@@ -195,6 +234,7 @@ Usually, `column-major` matrices pre-multiply vectors, whereas `row-major` post-
 * `attenuation`: Fall-off of the intensity of a light.
 * `BVH` (Bounding volume hierarchy).
 * `DLSS` (Deep Learning Super Sampling).
+* `DXR` (DirectX Ray tracing).
 * `G-buffer` (Geometric buffer): A GPU buffer used to store geometric information of thescene. Used with deferred rendering. [See](#g-buffer).
 * `HZB` (Hierarchical Z-buffer).
 * `LOD` (Level of detail).
@@ -208,6 +248,7 @@ Usually, `column-major` matrices pre-multiply vectors, whereas `row-major` post-
   * Blend state
   * Depth/Stencil state
   * Render target
+* `RT` (Ray Tracing).
 * `stereo calibration`: Find corresponding points in two cameras.
 * `TBN` (Tangent Bitangent Normal).
 * `technique`: A combination of passes executed in a particular order to implement a rendering algorithm.
