@@ -1,6 +1,9 @@
 ---
 # Feel free to add content and custom Front Matter to this file.
 # To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
+
+title: Main Notes
+layout: default
 ---
 
 # Top-level rendering technique / rendering algorithms (TODO not sure of the correct term)
