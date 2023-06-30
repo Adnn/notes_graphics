@@ -11,6 +11,7 @@ title: TODOs
 * Scissor test
 * How to use Gl_ext_timer_query to measure GPU times?
 * Standard Annotations and Semantics (SAS)
+* Contact shadows
 
 ## TODOs regarding the notes themselves
 

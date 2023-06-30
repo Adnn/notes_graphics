@@ -1,10 +1,17 @@
 # Notes Graphics
 
+My personnal notes on Computer Graphics, published at https://adnn.github.io/notes_graphics/.
+
 ## How To
 
 ### Files hosting
 
-Files are currently hosted on Dropbox (avoiding duplication).
+Private files such as PDF documents have to be hosted on personal backends. Currently using Google Drive since it allows for page selection.
+
+#### Google Drive
+
+#### Dropbox
+
 It is possible to restrict the dropbox sharing link to active user only:
 
     "Dropbox sharing" -> "Parameters" -> "Invited"
