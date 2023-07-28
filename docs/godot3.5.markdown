@@ -7,14 +7,18 @@ TODO understand the different "render priority" mechanisms:
 * depth_layer (is it related to SORT_KEY_OPAQUE_DEPTH_LAYER_SHIFT?)
 * SORT_KEY_PRIORITY_SHIFT
 
+TODO What is depth_layer / layer_mask interaction?
 
+TODO What are the semantics of enumerators in VisualServer::ShadowCastingSetting
+
+TODO whas it LightInstance::ShadowTransform, and why are there 4
 
 ## Ideas and notes
 
 
 * The GLSL shaders do not show-up in the IDE, but they are at godot/drivers/gles3/shaders
 * Have a "Render" object counting stats
-(draw call, material switches, surface switch, shader rebind, vertices cont, shader compilations)
+(draw call, material switches, surface switch, shader rebind, vertices count, shader compilations)
 * Instances keep track of the last render pass that rendered them (i.e. not culled)
 * A list of shaders for dedicated purposes is harcoded in `RasterizerSceneGLES3::State`.
 * Regarding shaders, it seems Godot has a single "logical" `SceneShader` instance, used to render any instance.
@@ -162,7 +166,7 @@ VisualServerRaster::draw(frame_step)
                                 RasterizerSceneGLES3::_setup_environment() // see above
 
                                 if use_depth_prepass:
-                                    // setup pipeline state, bind frambuffer, set viewport
+                                    // setup pipeline state, bind framebuffer, set viewport
                                     // Clear depth bufer
                                     _fill_render_list() // see above
                                     render_list.sort_by_depth(Non-alpha)
@@ -396,7 +400,7 @@ struct RasterizerSceneGLES3
     {
         // Current setup sub-state of the GL server (blend mode, line_width, depth_test...)
 
-        // Shaders: sene, cubeToDp, Resolve, SSR, EffectBlur, SSS, SSAO, Exposure, Tonemap
+        // Shaders: SceneShaderGLES3, cubeToDp, Resolve, SSR, EffectBlur, SSS, SSAO, Exposure, Tonemap
 
         struct SceneDataUBO
         {
@@ -589,7 +593,7 @@ struct RasterizerStorageGLES3::Shader
 }
 ```
 
-[(shader_gles3.h L55)](https://github.com/godotengine/godot/blob/3.5/drivers/gles3/shader_gles3.h#55)
+[(shader_gles3.h L55)](https://github.com/godotengine/godot/blob/3.5/drivers/gles3/shader_gles3.h#L55)
 ```
 ShaderGLES3
 {

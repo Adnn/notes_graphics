@@ -4,8 +4,7 @@
 
 title: Main Notes
 ---
-# Top-level rendering technique / rendering algorithms (TODO not sure of the correct term)
-
+# Top-level rendering technique / rendering algorithms (TODO not sure of the correct term, ourmachinary.com calls them "high-level pipeline algorithms")
 ## Forward rendering
  Rasterize each geometric object in the scene, and during each fragment shading iterate each light in the scene. (description ignoring optimizations).
 
