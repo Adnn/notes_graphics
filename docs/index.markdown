@@ -233,21 +233,32 @@ Usually, `column-major` matrices pre-multiply vectors, whereas `row-major` post-
 * `BVH` (Bounding volume hierarchy).
 * `DLSS` (Deep Learning Super Sampling).
 * `DXR` (DirectX Ray tracing).
-* `G-buffer` (Geometric buffer): A GPU buffer used to store geometric information of thescene. Used with deferred rendering. [See](#g-buffer).
+* `G-buffer` (Geometric buffer): A GPU buffer used to store geometric information of thescene. Used with deferred rendering. [G-buffer section](#g-buffer).
 * `HZB` (Hierarchical Z-buffer).
+* `IHV` (Independent Hardware Vendor).
 * `LOD` (Level of detail).
+* <a name="msaa"/> `MSAA` (Multisample Anti-Aliasing).
 * `pipeline state`: A specific configuration of the rendering pipeline. Once applied, it does control how objects are rendered.
   * Program (i.e. active shaders)
   * Rasterizer state
     * polygon fill mode
     * culling mode,
     * scissor culling
-    *  viewports
+    * viewports
   * Blend state
   * Depth/Stencil state
   * Render target
 * `RT` (Ray Tracing).
+* `SSAO`(Screen Space Ambient Occlusion)
+* `SSR` (Screen Space Reflection)
+* `SSS` (SubSurface Scattering).
 * `stereo calibration`: Find corresponding points in two cameras.
+* `TAA` (Temporal Anti-Aliasing).
 * `TBN` (Tangent Bitangent Normal).
 * `technique`: A combination of passes executed in a particular order to implement a rendering algorithm.
 * `VFC` (View frustum culling).
+
+* `GPC` (Graphics Processing Cluster): groups multiple [SMs](#sm).
+* <a name="sm"/> `SM` (Streaming Multiprocessor).
+* `ROP`(Render Output Unit, or Raster Operations Pipeline): performs [MSAA](#msaa), depth-testing, blending, ...
+
