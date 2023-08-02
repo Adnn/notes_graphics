@@ -201,13 +201,19 @@ A _VAO_ represent a collection of sets of _vertex attributes_,  each set values 
 are stored outside the _VAO_, as an array in a _buffer object_ data store
 (TODO is the buffer called **vertex attribute array**?).
 
-Binding the VAO restore all captured state at once:
-* Enabled arrays (`glEnableVertex[AttribArray|ArrayAttrib]()`).
-* Attribute configuration
-  * Format (data type, element count, relative offset, normalization)
-  * Source buffer binding
-* [Attribute divisor](#divisor), for instanced rendering.
-* Index Buffer (The last index buffer that was explicitly bound while the VAO was bound)
+Binding the _VAO_ restore all captured state at once:
+* _Vertex format_
+  * enabled arrays (`glEnableVertex[AttribArray|ArrayAttrib]()`).
+  * data type, element count, normalization
+  * relative offset (added to the binding point _base offset_, thus allowing _interleaving_ attributes)
+  * associated buffer binding point (binding index <-> vertex attribute index)
+* _Buffer binding point_ state, **shared by all vertex attributes** pulled from this binding point
+  * source _buffer object_ (buffer object <-> binding index)
+  * base offset into the buffer
+  * byte stride
+  * [Instance divisor](#divisor), for instanced rendering
+* _Index Buffer_ binding (The last _buffer object_ bound to `GL_ELEMENT_ARRAY_BUFFER` while the _VAO_ was bound)
+
 
 **Important**: if the array corresponding to an attribute (required by a _Vertex Shader_) is not enabled, the corresponding element is taken from the current _attribute state_.
 (`glVertexAttrib*()` family of functions allow to set the default state for an attribute, which is used when the attribute array is not enabled)
@@ -332,13 +338,13 @@ it encapsulates all state related to the definition of data used by the _vertex 
 
 Specifying the organization of data store of _generic vertex attribute_ for a _VAO_: `glVertex*Attrib*Format()`.<br/>
 This stores in the VAO that the _generic vertex attribute_ at index `attribindex` will be fetched from an array of described format,
-with a relative `offset` (allow interleaving different attributes in a single buffer).
+starting at `relativeoffset` (allow **interleaving** different attributes in a single buffer).
 
 Associating a vertex buffer object to a VAO's _buffer binding index_: `glBindVertexBuffer()` ([DSA](#DSA) variant: `glVertexArrayVertexBuffer()`).<br/>
 This provides a `stride` and `offset` for a buffer and attach it to the specified _binding index_ of selected _VAO_.
 
-Associating a vertex attribute to a _VAO_'s _buffer binding index_: `glVertex*AttribBinding()`.<br/>
-The _vertex attribute_ at `attribindex` will be fetched from the buffer currently attached to `bindingindex`.
+Associating a vertex attribute to a _VAO_'s _buffer binding index_: `glVertexAttribBinding()` ([DSA](#DSA) variant: `glVertexArrayAttribBinding()`).<br/>
+The _vertex attribute_ at `attribindex` will be fetched from the buffer currently attached to `bindingindex` of the selected _VAO_.
 
 #### <a name="divisor"/> Vertex Attribute Divisor
 
