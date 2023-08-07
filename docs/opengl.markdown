@@ -336,14 +336,17 @@ it encapsulates all state related to the definition of data used by the _vertex 
 
 #### Separate format and data source
 
-Specifying the organization of data store of _generic vertex attribute_ for a _VAO_: `glVertex*Attrib*Format()`.<br/>
+Specifying the organization of data store of _generic vertex attribute_ for a _VAO_:<br/>
+`glVertexAttrib*Format(attribindex, size, type, normalized, relativeoffset)` ([DSA](#DSA) variant: `glVertexArrayAttrib*Format()`).<br/>
 This stores in the VAO that the _generic vertex attribute_ at index `attribindex` will be fetched from an array of described format,
 starting at `relativeoffset` (allow **interleaving** different attributes in a single buffer).
 
-Associating a vertex buffer object to a VAO's _buffer binding index_: `glBindVertexBuffer()` ([DSA](#DSA) variant: `glVertexArrayVertexBuffer()`).<br/>
+Associating a vertex buffer object to a VAO's _buffer binding index_:<br/>
+`glBindVertexBuffer(bindingindex, buffer, offset, stride)` ([DSA](#DSA) variant: `glVertexArrayVertexBuffer()`).<br/>
 This provides a `stride` and `offset` for a buffer and attach it to the specified _binding index_ of selected _VAO_.
 
-Associating a vertex attribute to a _VAO_'s _buffer binding index_: `glVertexAttribBinding()` ([DSA](#DSA) variant: `glVertexArrayAttribBinding()`).<br/>
+Associating a vertex attribute to a _VAO_'s _buffer binding index_:<br/>
+`glVertexAttribBinding(attribindex, bindingindex)` ([DSA](#DSA) variant: `glVertexArrayAttribBinding()`).<br/>
 The _vertex attribute_ at `attribindex` will be fetched from the buffer currently attached to `bindingindex` of the selected _VAO_.
 
 #### <a name="divisor"/> Vertex Attribute Divisor
@@ -385,7 +388,7 @@ Some parameters are shared by most commands:
   - In both cases, the index of the current array element may be read by a VS via `gl_VertexID`.
 - `Multi`: is equivalent to issuing parameter `drawcount` draw commands at once, parameters becoming pointers into arrays of `drawcount` elements.
   VS can read the index of the draw via `gl_DrawID`.
-- `BaseVertex`: the value of `GLint` parameter `basevertex` is added to the indices read from the element array buffer **before** pulling the vertex data. (Note: this is only available for `Element` variant, because `Array` already takes a `first` parameter).
+- `BaseVertex`: the value of `GLint` parameter `basevertex` is added to the indices read from the element array buffer **before** pulling the vertex data. It allows to load vertices for distinct models in the same `GL_ARRAY_BUFFER` without requiring to re-index subsequent models. (Note: this is only available for `Element` variant, because `Array` already takes a `first` parameter).
 - `Count`: `drawcount` is now a byte offset into the (server space) buffer bound to `GL_PARAMETER_BUFFER`, where a single `GLsizei` value is read to provide the actual draw count.
 - [`Indirect`](#draw_indirect): read some of the draw parameters from server space memory, from the buffer bound to `GL_DRAW_INDIRECT_BUFFER`, offset by parameter `indirect` bytes.
 
