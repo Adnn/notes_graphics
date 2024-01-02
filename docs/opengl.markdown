@@ -263,6 +263,9 @@ _Program pipeline objects_ allow to combine stages without requiring one _progra
 
 ### Textures
 
+* `Pack`: read from OpenGL
+* `Unpack`: write to OpenGL
+
 `glTexStorage*()` specifies the internal format, i.e. the format OpenGL will use to store the texture data.
 **Note**: For the `internalformat` parameter, use **sized formats** to be explicit (instead of letting implementation decide).
 
@@ -278,6 +281,7 @@ GLSL shader programs can _sample_ the texure via `sampler` uniform variables (wh
 **Warning**: A `sampler` uniform variable is a GLSL type, distinct from a _Sampler Object_, which is an application object encapsulating sampling parameters.
 
 #### Image load/store
+
 **image variables** are GLSL uniform variables allowing arbitrary read/write to/from image within a Texture.
 A given _level_ ("image") in a _texture_ is bound to an _image unit_ (distinct from _texture image unit_) with `glBindImageTexture()`. The uniform value of an `image` GLSL variable (of matching type) is set to the same _image unit_.
 
