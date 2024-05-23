@@ -57,40 +57,177 @@ _primitive assembly_ (_triangle setup_): Setup differentials, edge equations,...
 triangle traversal: find which pixels or samples are inside a triangle, and generate fragments with interpolated properties.\
 A _fragment_ is the piece of a triangle partially or fully overlapping a pixel (p49)
 
-##Pixel processing
-Fragment shading
-Merging (ROP): **raster operations** or **blend operations**. merge fragment shading output color(s) with data already present in the color buffer, handles depth buffer (z-buffer), stencil buffer. The **framebuffer** consists of all enabled buffers.
+### Pixel processing p22
 
-Ch3 The Graphics Processing Unit
+#### Fragment shading
+Merging (ROP): _raster operations_ or _blend operations_. merge fragment shading output color(s) with data already present in the color buffer, handles depth buffer (z-buffer), stencil buffer. The _framebuffer_ consists of all enabled buffers.
 
-Details of why a GPU is very efficient for graphics rendering, with details of the data-parallel architecture:
-**warps** (nvidia) or **wavefronts** (amd) grouping predefined numbers of **threads** of with the same shader program. Resident warps are said to be **in flight**, defining **occupancy**. Branching might lead to **thread divergence**.
+## Chapter 3 - The Graphics Processing Unit p29
 
-Programmable shader stage has 2 types on input: **uniform** and **varying**.
-Flow control is divided between **static flow control** based on uniforms (no thread divergence) and **dynamic flow control**, which depends on varyings.
+Give details of why a GPU is very efficient for graphics rendering, with details of the data-parallel architecture:
+* _warps_ (nvidia) or _wavefronts_ (amd) grouping predefined numbers of _threads_ of with the same shader program. Resident warps are said to be _in flight_, defining _occupancy_.
+  Branching might lead to _thread divergence_.
+
+Programmable shader stage has 2 types on input: _uniform_ and _varying_.
+
+_Flow control_ is divided between _static flow control_ based on uniforms (no thread divergence) and _dynamic flow control_, which depends on varyings.
 
 A detailed history of programmable shading and graphics API p37.
 
-Geometry shader can be used to efficiently generate cascaded shadow maps
+Geometry shader can be used to efficiently generate cascaded shadow maps.
 
-Stream output can be used to skin a model and then reuse transformed vertices
+Stream output can be used to skin a model and then reuse transformed vertices.
 
-#Pixel Shader
-Multiple Render Targets (MRT) allow pixel shaders to generates distinct values and saved them to distinct buffers (called Render Target). E.g color, depth, object ids, world space distance, normals
+### The Pixel Shader p49
 
-In the context of fragment shaders, a **quad** is a group of 2x2 adjacent pixels, processed together to give access to gradients / derivatives (e.g. texture mipmap level selection)
-Gradients cannot be accessed in parts affected by dynamic flow control p51. (I do not understand why)
+_Multiple Render Targets_ (MRT) allow pixel shaders to generates distinct values
+and saved them to distinct buffers (called Render Target).
+E.g. color, depth, object ids, world space distance, normals
 
-Render Target can only be written at the pixel's location. Dedicated buffer type allow write access to any location. Unordered Access View UAV (DX) / Shader Storabe Buffer Object SSBO (OGL).
-Data race are mitigated via dedicated _atomic units_, but they might lead to stalls.
+In the context of fragment shaders, a _quad_ is a group of 2x2 adjacent pixels,
+processed together to give access to gradients/derivatives (e.g. texture mipmap level selection)
+Gradients cannot be accessed in parts affected by dynamic flow control p51. (I suppose because eeach thread in a quad has to compute its part for sharing with neighbors?)
 
-## Merging stage
-Output merger (DX) / Per-sample operations (OGL)
+A Render Target can only be written **at the pixel's location**.\
+Dedicated buffer type allow write access to any location. _Unordered Access View_ (UAV) in DX / _Shader Storabe Buffer Object_ (SSBO) in OpenGL.\
+Data races are mitigated via dedicated _atomic units_, but they might lead to stalls.
 
-## Compute shader
+### Merging stage p53
+Output merger (DX) / Per-sample operations (OpenGL)
+
+### Compute shader p54
 
 A form of GPU computing, in that it is a shader not locked  into a location of the graphics pipeline.
-Compute shaders give explicit access to a thread ID. They are executed by _thread group_, all threads  in the group guaranteed tonrun concurrently, and share a small amount of memory.
+Compute shaders give explicit access to a `thread ID`. They are executed by _thread group_,
+all threads  in the group guaranteed to run concurrently, and share a small amount of memory.
+
+## Chapter 4 - Transforms p57
+
+* _Linear transforms_ preserve vector addition and scalar multiplication: scale, rotation
+* _Affine transforms_ allow translation, they preserve parallelism of lines, but not necessarily length or angles.
+
+For orthogonal matrices, the inverse is their transpose.
+
+How to compute a look-at matrix p67
+
+TODO: Note taken up-to 4.2.2 (excluded) in linear_algebra.md, to be completed.
+
+### Morphing p90
+
+Evolution _Morph Targets_ (_Blend Shapes_) p90
+
+### Projections p92
+
+Pointers to increase depth precision p100
+
+## Chapter 5 - Shading basics p103
+
+A _Shading model_ describes how the surface color varies based on factors such as orientation, view direction, lighting.
+
+Some models in this chapter:
+* Lambertian
+* Gooch
+
+The different types of light essentially describes how light vector(s) $\mathbf{l}$ and light color $c_\text{light}$ vary over the scene.
+
+Lights:
+* Directional light
+* Punctual light
+  * Point light (Omni light)
+  * Spot light
+
+The different computations in shading have a _frequency of evaluation_ :
+* Uniform frequency:
+  * Per installation / configuration (can even be baked in the shader)
+  * Valid for a few frames
+  * Per frame
+  * Per object
+  * Per draw call
+* Computed by on of the shader stages / Varying:
+  * Per pre-tesselation vertex: in Vertex shader (_Gouraud shading_)
+  * Per surface patch: Hull shader
+  * Per post-tessaltion vertex: Domain shader
+  * Per primitive: Geometry shader
+  * Per fragment: Fragment shader (_Phong shading_)
+
+**Warnings**: p119 Interpolation of unit vectors might have non-unit result. (-> re-normalize after interpolation)\
+Interpolation of differing length vector skew towards the longest. This is a problem with normals (-> normalize before interpolation), but is required for correct interpolation of directions (e.g. light)
+
+p120: which coordinate system to choose for fragment shader computations:
+* World space (minimize the work for transforming e.g. lights)
+* View space (easy view vector, potentially better precision)
+* Model space (uncommon)
+
+_rendering framework_, undefined, p122. I think it corresponds to our library code.
+
+"Clamping to $[0, 1]$ is quick (often free) on GPUs" p124
+
+#### Material Systems p125
+
+The _material system_ seems to handle the variety of materials, shading models, shaders.
+
+A _material_ is an artist-facing encapsulation of the visual appearance of a surface.
+
+Shader<->Material is not a 1-to-1 correspondance.
+* A single material might use distinct shaders depending on the circonstances.
+* A shader might be shared by several materials. A usual situation is material parameterization: a _material template_ plus paramater values produce a _material instance_.
+
+"One of the most important task of a material system is dividing various shader functions into
+separate elements and controlling how these are combined." p126
+i.e. producing shader variants.\
+This has to be handled at the source code level. The larger the number of variants, the more crucial are modularity and composability.
+
+"Typically only part of the shader is accessible to visual graph authoring." p128
+
+#### Screen-Based Antialiasing p137
+
+Detailed overview of a lot of screen-based AA techniques (supersampling, temporal, morohological(image-based))
+
+"Antialiasing (such as MSAA or SSAA) is resolved by default with a box filter" p142 (and it seems to mean taking the average color).
+TODO: I do not understand why, since it seems box would just pick nearest...
+
+### Transparency, Alpha, Compositing p148
+
+Transparency:
+* _alpha tocoverage_ ?
+* _stochastic transparency_ ?
+* _alpha blending_
+  "alpha simulates how much the material covers the pixel" p151
+  (MSAA samples might already handle the fragment geometric coverage of the pixel).
+
+_Blend modes_: usual is **over** when rendering transparent objects back to front, and there is also **under** (apparently only when rendering front to back?)
+
+_order independent transparency_ (OIT):
+* Depth peeling
+* A-buffer
+* Multi-layer alpha blending
+* Weighted sum and Weighted average
+
+_Pre-multiplied alphas_ (or _associated alphas_) are making the **over** operator more efficient, and make it possible to use **over** and **additive** blending within the same blend state.
+
+### Display encoding p160
+
+Displays have a (standardised) _electrical-optical transfer function_ (EOTF) (or _display transfer function_): it defines the relationship between the electric level of the signal and emitted radiance level (I assume the electric level is linear with the digital value in the color buffer).
+
+Since our computations are done in linear (radiance) space, we need to apply the inverse of the EOTF to the final value written in the color buffer.
+This way, the display will cancel it with the forward EOTF, and the expected radiance is displayed.
+(This process of nullifying the display's non-linear response curve is called _gamma correction_, or _gamma encoding_, or _gamma compression_, since the EOTF is about $y = x^{\gamma}$)
+
+"Luckily", human radiance sensitivity is close to the EOTF inverse. (**Note**: this human sensitivity is not what gamma correction corrects.)\
+Thanks to that, the encoding is roughly _perceptually uniform_ :\
+we perceive about the same difference between two encoded levels everywhere in encoded space, even though the absolute radiance difference is much smaller for smaller encoded values
+(in other words, the EOTF mitigates banding).
+
+Encoding is also called _gamma compression_.
+It is a form of compression that preserves the perceptual effect over the limited precision
+of the color buffer better than if there was no encoding
+(banding would be more servere for small radiance values)\
+Put another way, There is linear value used for physical computations, and display-encoded values (e.g. displayable image formats). We need to move data to(**encode**) or from(**decode**) the display-encoded form to either display it, or read images values for computations.
+
+_sRGB_ defines the EOTF for consummer monitor displays.
+It is closely approximated by $\gamma = 2.2$.
+
+**Note**: a display does transform a sRGB non-linearly encoded image to linear radiance values. So the forward EOTF should be applied to linearize an image format that is sRGB encoded.
 
 
 ## Chapter 6 - Texturing p169
@@ -187,6 +324,78 @@ can be used to modulate the light intensity of lights
 (limited to a cone or frustum for normal texture, or all directions for cubemap).\
 They are then called _gobo_ or _cookie_ lights.
 
+## Chapter 7 - Shadows p223
+
+_Occluders_ cast shadows on _receivers_.
+
+Shadows are _umbra_ + _penumbra_.
+* _Hard shadows_ do **not** have a penumbra
+* _Soft shadows_ have a penumbra
+
+### Planar shadows p225
+
+_Planar shadows_ are a simple case where the shadows are cast on a planar surface.\
+Idea to use stencil buffer to limit drawing shadows to a surface p227.
+
+A _light map_ is a texture that modulate the intensity of the underlying surface.
+Heckbert and Herf's method p228 can be used offline to generate "ground-truth" shadows.
+
+### Shadow volume p230
+
+_Shadow volumes_ are analytical, not image based, so they avoid sampling problems. They have unpredictable costs.
+
+### Shadow Maps p234
+
+_Shadow map_ (_shadow depth map_, _shadow buffer_) is the content of a z-buffer rendered from the light perspective.\
+Prone to _self-shadowing aliasing_ (_shadow acne_).\
+Mitigated via a _bias factor_, which is more effective when proportional to the angle between receiver and light: _slope scale bias_. Too much bias introduces _light leaks_ (_Peter Panning_).
+
+#### Resolution enhancement p240
+
+* _Perspective aliasing_ is the mismatch between the color-buffer pixels and texels in the shadow map (ideal ratio would be 1:1),
+due to foreshortening occurring in the perspective view.
+* _Projective aliasing_ is due to surfaces forming a steep angle with the light direction, but are seen face one.
+
+_Resolution enhancement_ methods aim to address aliasing.
+
+_Perspective warping_ techniques attempt to better match the light's sampling rates to the eye's, usually altering the light's view plane (via its matrix) so its sample distribution gets closers to the color-buffer (eye) samples:
+* Perspective shadow maps (PSM)
+* Trapezoidal shadow maps (TSM)
+* Light space perspective shadow maps (LiSPSM).
+
+Those tend to fail with _dueling frusta_ (_deer in the headlights_).
+
+Another approach it to generate several shadow maps for a given view.
+The popular approach is _cascaded shadow maps_ (CSM) or _parallel-split shadow maps_.
+It requires _z-partitioning_ along the view.\
+_sample distribution shadow maps_ (SDSM) use previous frame z-depth to refine partitioning.
+
+### Percentage-closer Filtering  p247
+
+_Percentage-closer filtering_ (PCF) provides an approximation of soft-shadows by comparing the depth to several texels in the shadow-map,
+returning a (linear-interpolation?) of the individual results.
+
+_Percentage-closer soft shadows_ (PCSS) p250 aim for more accurate soft-shadows by sampling the shadow map to find possible occluders to vary the area of neighbours that will be sampled in the shadow map. This allows _contact hardening_.\
+Enhancements are _contact hardening shadows_ (CHS), _separable soft shadow mapping_ (SSSM), _min/max shadow map_.
+
+### Filtered Shadow Maps p252
+
+_variance shadow map_ (VSM) allow filtering (blur, mipmap, summed area tables,...) the shadow maps. This is efficient for renderong large penumbras. It suffers from _light bleeding_ for overlapping occluders.
+
+Other approaches to filtered shadow maps are _convolution shadow maps_ , _exponential shadow map_ ESM (or _exponential variance shadow map_ EVSM), _moment shadow mapping_.
+
+### Volumetric Shadow Techniques p257
+
+_deep shadow maps_, _opacity shadow maps_, _adaptive volumetric shadow maps_
+
+### Other Applications p262
+
+_screen-space shadows_ ray march the camera's depth buffer treated as an height field.
+(Good for faces, where small feature shadows are important)
+
+Other analytical approaches:
+* Ray tracing
+* _Irregular z-buffer_ (IZB) p259 gives precise hard shadows.
 
 ## Chapter 8 - Light and Color
 
@@ -293,7 +502,7 @@ This local model should separate the _specular term_ for surface reflection from
 
 Camera p307
 
-Sensors meadure **irradiance** over their surface. Adding enclosure, aperture and lens combine effect to make the sensor _directionally specific_, so the system measure **radiance**.
+Sensors meadure _irradiance_ over their surface. Adding enclosure, aperture and lens combine effect to make the sensor _directionally specific_, so the system measure _radiance_.
 
 #### BRDF p309
 
@@ -643,7 +852,7 @@ TODO what is $\theta_m$ p343? Is it the elevation (polar) angle of the microface
 
 Rough outline:
 * The tangent and bitangent have to be perturbed by the normal map (and an optional _tangent map_) to obtain the TBN frame where $\mathbf{m}$ is expressed. p344
-* Obtain an anisotropic version of the NDF, presented for **Beckmann NDF** and **GGX NDF** p345
+* Obtain an anisotropic version of the NDF, presented for _Beckmann NDF_ and _GGX NDF_ p345
 * Optionally use a custom parameterizaion for both roughness $\alpha_x$ and $\alpha_y$. Presented for **Disney principled shading model** and **Imageworks**.
 
 ##### Multiple-bounce surface reflection
