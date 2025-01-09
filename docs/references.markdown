@@ -15,6 +15,9 @@ layout: default
   : (#introductory #raytracing)\
   A good introduction to ray tracing and its development history, with comparison to rasterization.
 
+* https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#appendix-b-brdf-implementation\
+  A BRDF implementation given as appendix by th glTF specification.
+
 ## Books
 
 ### GPU Pro 360 Guide to 3D Engine Design

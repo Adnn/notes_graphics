@@ -165,9 +165,11 @@ are formally equivalent.
 * _Array buffer_ is a buffer from which _generic vertex attributes_ are fetched. (i.e. the buffer target is `GL_ARRAY_BUFFER`)
 * _Element buffer_ (or _Index buffer_) is the buffer from which vertex indices are fetched (target is `GL_ELEMENT_ARRAY_BUFFER`).
 * _Uniform Buffer Objects_ are buffer objects used by an application to store uniform data for a shader program.
-The shader program access the storage via GLSL _uniform blocks_ (the GLSL grouping of uniforms).
+The shader program access the storage via GLSL _uniform blocks_ (the GLSL grouping of uniforms)
+(target is `GL_UNIFORM_BUFFER`).
 The link is made via a _uniform buffer binding location_.
-* _Shader Storage Buffer Objects_ are accessed via GLSL _shader storage block_.
+* _Shader Storage Buffer Objects_ are accessed via GLSL _shader storage block_
+(target is `GL_SHADER_STORAGE_BUFFER`).
 
 #### Indexed targets
 
