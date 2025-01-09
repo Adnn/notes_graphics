@@ -4,8 +4,8 @@
 
 User controlled clipping planes via FS `discard`
 
-_Deferred shading_ does _visibility_ and _shading_ in distinct passes. It was given rise by the
-availability of _multiple render targets_ (MRT) p51
+_Deferred shading_ does _visibility_ and _shading_ in distinct passes.
+It was given rise by the availability of _multiple render targets_ (MRT) p51
 
 Deferred shading is categorized as:
 * a type of _rendering pipeline_, and then as a class of _rendering method_ p51.
@@ -65,7 +65,8 @@ Merging (ROP): _raster operations_ or _blend operations_. merge fragment shading
 ## Chapter 3 - The Graphics Processing Unit p29
 
 Give details of why a GPU is very efficient for graphics rendering, with details of the data-parallel architecture:
-* _warps_ (nvidia) or _wavefronts_ (amd) grouping predefined numbers of _threads_ of with the same shader program. Resident warps are said to be _in flight_, defining _occupancy_.
+* _warps_ (nvidia) or _wavefronts_ (amd) grouping predefined numbers of _threads_ with the same shader program.
+  Resident warps are said to be _in flight_, defining _occupancy_.
   Branching might lead to _thread divergence_.
 
 Programmable shader stage has 2 types on input: _uniform_ and _varying_.
@@ -81,12 +82,13 @@ Stream output can be used to skin a model and then reuse transformed vertices.
 ### The Pixel Shader p49
 
 _Multiple Render Targets_ (MRT) allow pixel shaders to generates distinct values
-and saved them to distinct buffers (called Render Target).
+and save them to distinct buffers (called Render Target).
 E.g. color, depth, object ids, world space distance, normals
 
 In the context of fragment shaders, a _quad_ is a group of 2x2 adjacent pixels,
 processed together to give access to gradients/derivatives (e.g. texture mipmap level selection)
-Gradients cannot be accessed in parts affected by dynamic flow control p51. (I suppose because eeach thread in a quad has to compute its part for sharing with neighbors?)
+Gradients cannot be accessed in parts affected by dynamic flow control p51.
+(I suppose because each thread in a quad has to compute its part for sharing with neighbors?)
 
 A Render Target can only be written **at the pixel's location**.\
 Dedicated buffer type allow write access to any location. _Unordered Access View_ (UAV) in DX / _Shader Storabe Buffer Object_ (SSBO) in OpenGL.\
@@ -118,7 +120,7 @@ Evolution _Morph Targets_ (_Blend Shapes_) p90
 
 ### Projections p92
 
-Pointers to increase depth precision p100
+Advices to increase depth precision p100
 
 ## Chapter 5 - Shading basics p103
 
@@ -128,13 +130,46 @@ Some models in this chapter:
 * Lambertian
 * Gooch
 
-The different types of light essentially describes how light vector(s) $\mathbf{l}$ and light color $c_\text{light}$ vary over the scene.
+
+Shading models that support multiple light sources will typically use one of the following structures:
+
+* $$
+\mathbf{c}_\text{shaded} =
+f_\text{unlit}(\mathbf{n}, \mathbf{v}) +
+\sum_{i = 0}^{n-1}{
+    \mathbf{c}_{\text{light}_i}
+    f_\text{lit}(\mathbf{l}_i, \mathbf{n}, \mathbf{v})
+}
+\text{(5.5)}
+$$
+  * More general
+
+* $$
+\mathbf{c}_\text{shaded} =
+f_\text{unlit}(\mathbf{n}, \mathbf{v}) +
+\sum_{i = 0}^{n-1}{
+    (\mathbf{l}_i \cdot \mathbf{n})^+
+    \mathbf{c}_{\text{light}_i}
+    f_\text{lit}(\mathbf{l}_i, \mathbf{n}, \mathbf{v})
+}
+\text{(5.6)}
+$$
+  * Required for physically based models
+    * TODO: Why is it required? We could fold the dot product in $f_\text{lit} of equation (5.5)
+
+**Note**: Varying values for materials properties (e.g. diffuse color, ambient color, ...)
+exist in the functions $f$, even though they do not appear as explicit parameters.
+
+The different types of light essentially describes how light vector $\mathbf{l}$ and light color $c_\text{light}$ vary over the scene.
+These two parameters are how light sources interact with the shading model.
 
 Lights:
 * Directional light
 * Punctual light
   * Point light (Omni light)
   * Spot light
+
+### Implementing Shading Models p117
 
 The different computations in shading have a _frequency of evaluation_ :
 * Uniform frequency:
@@ -143,12 +178,12 @@ The different computations in shading have a _frequency of evaluation_ :
   * Per frame
   * Per object
   * Per draw call
-* Computed by on of the shader stages / Varying:
-  * Per pre-tesselation vertex: in Vertex shader (_Gouraud shading_)
+* Computed by one of the shader stages / Varying:
+  * Per pre-tesselation vertex: in Vertex shader (colloquially: _Gouraud shading_)
   * Per surface patch: Hull shader
-  * Per post-tessaltion vertex: Domain shader
+  * Per post-tesselation vertex: Domain shader
   * Per primitive: Geometry shader
-  * Per fragment: Fragment shader (_Phong shading_)
+  * Per fragment: Fragment shader (colloquially: _Phong shading_)
 
 **Warnings**: p119 Interpolation of unit vectors might have non-unit result. (-> re-normalize after interpolation)\
 Interpolation of differing length vector skew towards the longest. This is a problem with normals (-> normalize before interpolation), but is required for correct interpolation of directions (e.g. light)
@@ -170,7 +205,8 @@ A _material_ is an artist-facing encapsulation of the visual appearance of a sur
 
 Shader<->Material is not a 1-to-1 correspondance.
 * A single material might use distinct shaders depending on the circonstances.
-* A shader might be shared by several materials. A usual situation is material parameterization: a _material template_ plus paramater values produce a _material instance_.
+* A shader might be shared by several materials.
+  A usual situation is material parameterization: a _material template_ plus parameter values produce a _material instance_.
 
 "One of the most important task of a material system is dividing various shader functions into
 separate elements and controlling how these are combined." p126
@@ -181,7 +217,7 @@ This has to be handled at the source code level. The larger the number of varian
 
 #### Screen-Based Antialiasing p137
 
-Detailed overview of a lot of screen-based AA techniques (supersampling, temporal, morohological(image-based))
+Detailed overview of a lot of screen-based AA techniques (supersampling, temporal, morphological(image-based))
 
 "Antialiasing (such as MSAA or SSAA) is resolved by default with a box filter" p142 (and it seems to mean taking the average color).
 TODO: I do not understand why, since it seems box would just pick nearest...
@@ -189,7 +225,7 @@ TODO: I do not understand why, since it seems box would just pick nearest...
 ### Transparency, Alpha, Compositing p148
 
 Transparency:
-* _alpha tocoverage_ ?
+* _alpha to coverage_ ?
 * _stochastic transparency_ ?
 * _alpha blending_
   "alpha simulates how much the material covers the pixel" p151
@@ -240,15 +276,17 @@ Note: _texture coordinates_ (usually $[0,1]^2$) are distinct from _texture space
 _Wang tiles_: small set of square tiles with matching edges.
 
 Texels have integer coordinates (do they mean indices?). In OpenGL, and since DX10, the center of a texel has coordinates (0.5, 0.5).
-Origine is lower-left (OpenGL) or upoer-left (DX)
+Origin is lower-left (OpenGL) or upper-left (DX).
 
-_dependant texture read_ mean fragment shader has to "compute" the texture coordinates instread of using the (u, v) passed from the VS verbatim. There is an older, more specific definition: a texture read whose coordinates are dependent upon another texture read.
+_dependant texture read_ mean fragment shader has to "compute" the texture coordinates
+instead of using the (u, v) passed from the VS verbatim.
+There is an older, more specific definition: a texture read whose coordinates are dependent upon another texture read.
 
 _power-of-two_ (POT) textures are $2^m \times 2^n$ texels. Opposed to NPOT.
 
 _detail textures_ can be overlaid on magnified textures (cf [Blending and filtering materials](#blending_and_filtering_materials))
 
-_mipmap chain_: set of images constituting al levels of a mipmapped texture.
+_mipmap chain_: set of images constituting all levels of a mipmapped texture.
 The continuous coordinate $d$, or _texture level of detail_, is the parameter  determining where to sample in the levels of a mipmap chain (along the mipmap pyramid axis). OpenGL calls it $\lambda$.
 
 The goal is a pixel-to-texel of at least 1:1 (so sampling (pixels) is at least twice the max signal frequency (1/2texels)).\
@@ -260,7 +298,7 @@ A major limitation of mipmaps is overblurring, because the filtering is isotropi
 _anisotropic filtering_:
 _Summed-Area Table_ (SAT) p186\
 _Unconstrained Anisotropic Filtering_ (in modern GPUs) p188\
-_Elliptical Weighted Area_ (EWA) is a hight qualitu software approach.
+_Elliptical Weighted Area_ (EWA) is a hight quality software approach.
 
 _cube maps_ p190
 
@@ -296,21 +334,32 @@ _Alpha-to-coverage_ translates transparency as a MSAA coverage mask p207\
 _Appearance modeling_ (Ch 9 p367) assumes different scales of observations,
 influencing modelling approaches:
 * _Macroscale_ (large scale, usually several pixels), as triangles
-* _Mesosclae_ (middle scale, about 1 pixel), as textures
-* _Microscale_ (smaller than a pixel), via the BRDF (Chapter 9)
+* _Mesosclae_ (middle scale, 1 to a few pixels), as textures, e.g. normal maps
+* _Microscale_ (smaller than a pixel), encapsulated in the shading model, e.g. via the BRDF (Chapter 9)
 * _Nanoscale_ ($[1, 100]$ wavelengths in size, unusual in real-time), by using wave optics models (Chapter 9)
 
 ### Bump-mapping p208
-A family of small-scale (meso-feature) detail representation, essentially modifying the shading normal at fragment lcoation.\
-The frame of reference of the normal map is usuall surface space, with a TBN matrix to change from object to surface.
+A family of small-scale (meso-feature) detail representation, essentially modifying the shading normal at fragment location.\
+The frame of reference of the normal map is usual surface space, with a TBN matrix to change from object to surface.
+
+**Note**: p210 "in [the case of textures mirrored on symmetric objects], the handedness of the tangent space will be different on the two side".
+I think this is because the normal map will be applied on both sides,
+and to actually mirror the resulting normal we need to mirror the TBN basis
+(which changes its handedness).
+Also, from Assimp doc: "The (bi)tangent of a vertex point in the direction of the positive X(Y) texture axis". This also implies mirroring the TBN basis when texture is mirrored.
 
 Types of bump mapping:
 * Blinn's method p211, via _offset vector bump map_ (offset map) or _height map_
-* Normal mapping, via a _normal map_ (difficult to filter)
+* Normal mapping, via a _normal map_ (difficult to filter: the normal-map values have a non-linear relationship to the shaded color.):
+  * Initially in world-space. Trivial to use, but objects cannot be rotated.
+  * object-space allows rotation, but bind the map to a specific surface on a specific object (i.e. limit reuse).
+  * tangent-space is the usual approach, but requires computing the TBN.
+
+_Horizon mapping_ allows bumps to cast shadows onto their own surface.
 
 ### Parallax mapping p214
 
-_Parallax mapping_ in general aims  to determine what is seen at a pixel using a heightfield. It can give better occlusion/shadow clues.
+_Parallax mapping_ in general aims to determine what is seen at a pixel using a heightfield. It can give better occlusion/shadow clues.
 
 Approaches:
 * _Parallax mapping_ is an euristic (and cheap) approach that offsets texture coordinates before sampling the  albedo.
@@ -322,7 +371,7 @@ Approaches:
 Projective textures (called _light attenuation textures_ in this context)
 can be used to modulate the light intensity of lights
 (limited to a cone or frustum for normal texture, or all directions for cubemap).\
-They are then called _gobo_ or _cookie_ lights.
+They are then called _gobo_ or _cookie_ lights (the textures are _light attenuation mask_, or _gobo maps_, or _cookie textures_)
 
 ## Chapter 7 - Shadows p223
 
@@ -337,8 +386,10 @@ Shadows are _umbra_ + _penumbra_.
 _Planar shadows_ are a simple case where the shadows are cast on a planar surface.\
 Idea to use stencil buffer to limit drawing shadows to a surface p227.
 
-A _light map_ is a texture that modulate the intensity of the underlying surface.
+A _light map_ is a texture that modulate the intensity of the underlying surface (e.g. planar shadow rendered to a texture).
+
 Heckbert and Herf's method p228 can be used offline to generate "ground-truth" shadows.
+It can be extended to work with any algorithm producing hard-shadows.
 
 ### Shadow volume p230
 
@@ -347,40 +398,47 @@ _Shadow volumes_ are analytical, not image based, so they avoid sampling problem
 ### Shadow Maps p234
 
 _Shadow map_ (_shadow depth map_, _shadow buffer_) is the content of a z-buffer rendered from the light perspective.\
-Prone to _self-shadowing aliasing_ (_shadow acne_).\
+
+_Omnidirectional shadow maps_ capture the z-buffer all-around the light, typically via a six-view cube.
+
+Prone to _self-shadow aliasing_ (_surface acne_, _shadow acne_).\
 Mitigated via a _bias factor_, which is more effective when proportional to the angle between receiver and light: _slope scale bias_. Too much bias introduces _light leaks_ (_Peter Panning_).
+
+_Second-depth shadow mapping_ renders only backfaces to the shadow map.
 
 #### Resolution enhancement p240
 
-* _Perspective aliasing_ is the mismatch between the color-buffer pixels and texels in the shadow map (ideal ratio would be 1:1),
-due to foreshortening occurring in the perspective view.
-* _Projective aliasing_ is due to surfaces forming a steep angle with the light direction, but are seen face one.
-
 _Resolution enhancement_ methods aim to address aliasing.
+
+* _Perspective aliasing_ is the mismatch in coverage between the color-buffer pixels and texels in the shadow map (ideal ratio would be 1:1),
+usually due to foreshortening occurring in the perspective view. It tends to show as "jagged" shadows.
+* _Projective aliasing_ is due to surfaces forming a steep angle with the light direction, but are seen face one.
 
 _Perspective warping_ techniques attempt to better match the light's sampling rates to the eye's, usually altering the light's view plane (via its matrix) so its sample distribution gets closers to the color-buffer (eye) samples:
 * Perspective shadow maps (PSM)
 * Trapezoidal shadow maps (TSM)
 * Light space perspective shadow maps (LiSPSM).
 
-Those tend to fail with _dueling frusta_ (_deer in the headlights_).
+Those tend to fail with _dueling frusta_ (_deer in the headlights_): i.e. when a light in front of the camera is facing at it.\
+Additional problems such as sudden changes in quality had perspective warping fall out of favor.
 
 Another approach it to generate several shadow maps for a given view.
-The popular approach is _cascaded shadow maps_ (CSM) or _parallel-split shadow maps_.
+The popular approach is _cascaded shadow maps_ (CSM), also called _parallel-split shadow maps_.
 It requires _z-partitioning_ along the view.\
-_sample distribution shadow maps_ (SDSM) use previous frame z-depth to refine partitioning.
+* _sample distribution shadow maps_ (SDSM) use previous frame z-depth to refine partitioning.
 
 ### Percentage-closer Filtering  p247
 
 _Percentage-closer filtering_ (PCF) provides an approximation of soft-shadows by comparing the depth to several texels in the shadow-map,
-returning a (linear-interpolation?) of the individual results.
+returning an interpolation of the individual results.
 
 _Percentage-closer soft shadows_ (PCSS) p250 aim for more accurate soft-shadows by sampling the shadow map to find possible occluders to vary the area of neighbours that will be sampled in the shadow map. This allows _contact hardening_.\
 Enhancements are _contact hardening shadows_ (CHS), _separable soft shadow mapping_ (SSSM), _min/max shadow map_.
 
 ### Filtered Shadow Maps p252
 
-_variance shadow map_ (VSM) allow filtering (blur, mipmap, summed area tables,...) the shadow maps. This is efficient for renderong large penumbras. It suffers from _light bleeding_ for overlapping occluders.
+_variance shadow map_ (VSM) allow filtering (blur, mipmap, summed area tables,...) the shadow maps.
+This is efficient for rendering large penumbras. It suffers from _light bleeding_ for overlapping occluders.
 
 Other approaches to filtered shadow maps are _convolution shadow maps_ , _exponential shadow map_ ESM (or _exponential variance shadow map_ EVSM), _moment shadow mapping_.
 
@@ -431,12 +489,12 @@ Each radometric quantity has an equivalent photometric quantity (the differences
 
 CIE's XYZ coordinates define a color's _chromaticity_ and _luminance_.
 _chromaticity diagram_, e.g; CIE 1931 taken by projection on the X+Y+Z=1 plane,
- is the lobe with the curved outline is the visible spectrum, with the straight line at the bottom called the _purple line_. The _white point_ define the _achromatic_ stimulus.
+ is the lobe with the curved outline being the visible spectrum, with the straight line at the bottom called the _purple line_. The _white point_ define the _achromatic_ stimulus.
 More perceptually uniform diagrams are developped, such as CIE 1976 UCS (part of the CIELUV color space).
 A triangle in the chromaticity diagram represent the _gamut_ of a color space, with vertices being the primaries.
 Given a $(x, y)$ color point on the chromaticity diagram and drawing a line
 with the white point give the _excitation purity_ (\~= _saturation_) as relative distance from the point to the edge,
-and the _dominant wavelength (\~= _hue_) as the intersection with the edge.
+and the _dominant wavelength_ (\~= _hue_) as the intersection with the edge.
 
 _spectral reflectance curve_ describes how much of each wavelength a surface reflects.
 
@@ -448,7 +506,7 @@ A _display standard_, such as sRGB, seems to encompass both a color-space (a RGB
 
 _Dynamic range_ is about luminance?
 
-_Perceptual quantizer (PQ)_ and _hybrid log-gamma_ (HLG) are non-linear display encodings defines by Rec. 2100 display standard.
+_Perceptual quantizer (PQ)_ and _hybrid log-gamma_ (HLG) are non-linear display encodings defined by Rec. 2100 display standard.
 
 _tone mapping_ or _tone reproduction_ is the process converting scene radiance values to display radiance values .
 The applied transform is called the _end-to-end transfer function_ or _scene-to-screen transform_.
@@ -459,22 +517,27 @@ Imaging pipeline:
 Tone mapping can be seen as an instance of _image reproduction_: its goal is to create a display-referred images reproducing at-best the perceptual impression of observing the original scene.
 
 Image reproduction is challenging: luminance of scene exceeds display capabilities by orders of magnitudes, and saturation of some colors are far out the display gamut.
-It is achieves by leveraging properties of the human visual system:
+It is achieved by leveraging properties of the human visual system:
 * _adaptation_: compensation for differences in absolute luminance.
 
 _exposure_ in rendering is a linear scaling on the scene-referred image **before** tone reproduction transform.
 
-_global tone mapping_ (scaling by exposure then applying tone reproduction transform) where the same mapping is applied to all pixels, vs _local tone mapping_ with different mappings based on surronding pixels.
+_global tone mapping_ (scaling by exposure then applying tone reproduction transform) where the same mapping is applied to all pixels, vs _local tone mapping_ with different mappings based on surrounding pixels.
 
 _color grading_ manipulates image colors with the intention to make it look better in some sense. It is a form of _preferred image reproduction_.
 
 ## Chapter 9 - Physically Based Shading p293
 
 TODO: clarify the list of physical interactions between light and matter, and their classification.
+Is it reflection, transmission and absorption?
+In particular, how to classify _refraction_ compared to _transmission_. Is refraction a separate effect occuring on transmitted light?
+
+From "Entretien avec Luc, 02/06/2024": the only physical interaction between photons and matter should be scattering.
+TODO: Maybe absorption is the another interaction?
 
 Light-matter interaction: the oscillating electrical field of light causes the electrical charges in matter to oscillate in turn.
-Oscillating charges emit new light waves, redirecting some energy of the incoming light wave in new direction. This reaction is _scaterring_ (usually, same frequency).
-An isolated molcelule scatters in all directions, with directional variation in intensity.
+Oscillating charges emit new light waves, redirecting some energy of the incoming light wave in new direction. This reaction is _scaterring_ (fr: _diffusion_) (usually, same frequency).
+An isolated molecule scatters in all directions, with directional variation in intensity.
 
 Particles smaller than a wavelength _scatter_ light with constructive interference.
 Particles beyond the size of a wavelength do not scatter in phase, the scattering increasingly favors the forward direction and the wavelength dependency decrease.
@@ -492,8 +555,8 @@ In _geometrical optics_ light is modeled as rays instead of waves, and surfaces 
 
 On the other hand, when irregularities are in the range 1-100 wavelengths, _diffractions_ occurs.
 
-_microgeometry_ are surface irregularities too small to be individually renderer (i.e. smaller than a pixel).
-For rendering, microgeometry is treated statistically by the _roughness_.
+_microgeometry_ are surface irregularities too small to be individually rendered (i.e. smaller than a pixel).
+For rendering, microgeometry is treated statistically via the _roughness_.
 
 _subsurface scattering_ p305
 * _local subsurface scattering_ can be used when the entry-exit distance is smaller than the shading scale.
@@ -502,7 +565,8 @@ This local model should separate the _specular term_ for surface reflection from
 
 Camera p307
 
-Sensors meadure _irradiance_ over their surface. Adding enclosure, aperture and lens combine effect to make the sensor _directionally specific_, so the system measure _radiance_.
+Sensors measure _irradiance_ over their surface.
+Added enclosure, aperture and lens combine effect to make the sensor _directionally specific_, so the system now measures _radiance_.
 
 #### BRDF p309
 
@@ -511,7 +575,7 @@ for the set of view rays $\mathbf{v}$ entering the camera positioned at $\mathbf
 
 _participating media_ does affect the radiance of a ray via absorption or scattering.
 
-Without participating media, given $\mathbf{p}$ is the intersection of the view ray with
+Without participating media (i.e. in clean air, commonly assumed in rendering), given $\mathbf{p}$ is the intersection of the view ray with
 the closest object surface:
 $L_i(\mathbf{c}, -\mathbf{v}) = L_o(\mathbf{p}, \mathbf{v})$
 
@@ -538,7 +602,10 @@ _Reflectance equation_, with $\Omega$ the hemisphere above the surface centered 
 $$
 L_o(\mathbf{p}, \mathbf{v}) =
 \int_{\mathbf{l} \in \Omega}{f(\mathbf{l}, \mathbf{v}) L_i(\mathbf{p}, \mathbf{l}) (\mathbf{n} \cdot \mathbf{l}) d\mathbf{l}}
+\qquad\text{(9.3)}
 $$
+
+**Note**: $p$ is often omitted from the notation, giving equation $\text{(9.4)}$.
 
 BRDF physical properties:
 * _Helmoltz reciprocity_ $f(\mathbf{l}, \mathbf{v}) = f(\mathbf{v}, \mathbf{l})$ (often violated by renderers). Can be used to assert a BRDF physical plausibility.
@@ -552,7 +619,7 @@ R(\mathbf{l}) =
     {f(\mathbf{l}, \mathbf{v}) (\mathbf{n} \cdot \mathbf{v}) d\mathbf{v}}
 $$
 
-_hemispherical-direction reflectance_ measure the amount of light, coming from all directions of the hemisphere, that is reflected toward a given direction $\mathbf{v}`:
+_hemispherical-directional reflectance_ measure the amount of light, coming from all directions of the hemisphere, that is reflected toward a given direction $\mathbf{v}$:
 
 $$
 R(\mathbf{v}) =
@@ -564,14 +631,16 @@ For a reciprocal BRDF, directional-hemispherical reflectance is equal to the hem
 
 **Note**: For a BRDF to be energy conserving, $R(\mathbf{l})$ is in the range $[0, 1]$ for any $\mathbf{l}$, but the BRDF does not have this restriction and can go above $1$.
 
-A Lambertian BRDF has a constant value (independent of incoming direction $\mathbf{l}$).
-So does the directional-hemispherical reflectance, whose constant value is then call _diffuse color_ $\mathbf{c}_{diff}$ or the _albedo_ $\rho$ (or in this chapter, _subsurface albedo_ $\rho_\text{ss})$:
+A Lambertian BRDF p313 has a constant value (independent of incoming direction $\mathbf{l}$).
+So does the directional-hemispherical reflectance, whose constant value is called _diffuse color_ $\mathbf{c}_{diff}$ or the _albedo_ $\rho$ (or in this chapter, _subsurface albedo_ $\rho_\text{ss})$:
 $$
 R(\mathbf{l}) = \pi f(\mathbf{l}, \mathbf{v}) = \rho_\text{ss}
 $$
 $$
 f(\mathbf{l}, \mathbf{v}) = \frac{\rho_\text{ss}}{\pi}
 $$
+
+TODO: derive that $\int_{\mathbf{l} \in \Omega} (\mathbf{n} \cdot \mathbf{l}) d\mathbf{l}$ is $\pi$.
 
 #### Illumination p315
 
@@ -581,10 +650,13 @@ _Global illumination_ calculates $L_i(\mathbf{l})$ by simulating how light propa
 
 **Note**: The reflectance equation is a special case of the rendering equation.
 
-_Local illumination_ algorithms uses the reflectance equation to compute shading locally at each seruface point,
+_Local illumination_ algorithms uses the reflectance equation to compute shading locally at each surface point,
 and are given $L_i(\mathbf{l})$ as input which does not need to be computed.
 
 We can define a light color $\mathbf{c}_{light}$ as the reflected radiance from a white Lambertian surface facing toward the light ($\mathbf{n} = \mathbf{l}$)
+
+TODO: does it mean $L_i(l) = \mathbf{c}_\text{light}$ ? Seems implied by the simplified reflectance equation.
+Plus radiance is indeed denoted by $L$.
 
 In the case of directional and punctual lights and local illumination (i.e. direct light contribution), each surface point $\mathbf{p}$ receive (at most) a single ray from each light source, along direction $\mathbf{l}_c$, simplifying the reflectance equation to:
 $$
@@ -599,12 +671,12 @@ L_o(\mathbf{v}) =
 $$
 **Note**: this ressembles equation (5.6) p109, with $\pi$ cancelled out by the $/\pi$ often appearing in the BRDFs.
 
-#### On to a specific phenomenas: Fresnel reflectance p316
+#### On to a specific phenomena: Fresnel reflectance p316
 
 _Fresnel equations_ are complex and not presented in the chapter.
 
 Light incident on flat surface splits into a reflected part and a refracted part.
-The direction of reflection $\mathbf{r}_i$ forms the same angle $\theta_i$ with the surface normal $mathbf{n}$ as $mathbf{l}$:
+The direction of reflection $\mathbf{r}_i$ forms the same angle $\theta_i$ with the surface normal $\mathbf{n}$ as $\mathbf{l}$ does:
 $$
 \mathbf{r}_i = 2 (\mathbf{n} \cdot \mathbf{l}) \mathbf{n} - \mathbf{l}
 $$
@@ -612,11 +684,11 @@ $$
 _Fresnel reflectance_ $F$ is the amount of light reflected (as a fraction of incoming light, i.e. a reflectance).
 It depends on $\theta_i, n_1, n_2$.
 
-_External reflection_ when $n_1 < n_2$, _internal reflection_ when $n_1 > n_2$.
+_External reflection_ (e.g. "air to material") when $n_1 < n_2$, _internal reflection_ when $n_1 > n_2$.
 
 Characteristics of $F(\theta_i)$ for a given substance interface:
 * At _normal incidence_ ($\theta_i = 0°$), the value is is a property of the substance, noted $F_0$ : the _normal-incidence Fresnel reflectance_.
-  It can be seen as the charactistic specular color of this substance.
+  It can be seen as the characteristic specular color of this substance.
 * As $\theta_i$ increases, $F(\theta_i)$ tend to increase, reaching a value of $1$ for all frequencies (white) at $\theta_i = 90°$. This increase in reflectance at glancing angles is often called the _Fresnel effect_.
 
 An approximation of the complex equation for Fresnel reflectance is given by Schlick:
@@ -646,7 +718,7 @@ parameters being an RGB surface color $\mathbf{c}_\text{surf}$ and a scalar _met
 $\rho_\text{ss}$ is set to $\mathbf{c}_\text{surf}$
 
 Metalness has some drawbacks:
-* cannot express some types of materials, such a conted dielectrics with tinter $F_0$.
+* cannot express some types of materials, such a coated dielectrics with tinted $F_0$.
 * artifacts can occur on the boundaries between metal and dielectric.
 
 Parameterization trick: since $F_0$ lower than 0.02 are very unusual,
@@ -666,7 +738,7 @@ $$
 
 #### Microgeometry p327
 
-Models surface irregularities that are smaller than a pixel, but larger than 100 wavelengths.
+Microgeometry models surface irregularities that are smaller than a pixel, but larger than 100 wavelengths.
 Most surfaces have an _isotropic_ distribution of the microscale surface normals (i.e. rotationally symmetrical).
 
 Effects of microgeometry on reflectance:
@@ -674,11 +746,20 @@ Effects of microgeometry on reflectance:
 * _Shadowing_: the occlusion of the light source by microscale surface details. -> hidden form $\mathbf{l}$.
 * _Masking_: some facets hiding others from the point of view. -> hidden form $\mathbf{v}$
 * _Interreflection_: light may undergo multiple boundes before reaching the eye.
-** sublte in dielectrics, light is attenuated by the Fresnel reflectance at each bounce.
-** source of any visible diffuse reflection in metals (I do not understand why the distribution of normals is not also a source of diffuse reflection?), since metals do no exhibit subsurface scattering. They are more deeply colored than primary reflection, since they result from light interacting multiple times with the surface.
+  * subtle in dielectrics, light is attenuated by the Fresnel reflectance at each bounce.
+  * source of any visible diffuse reflection in metals (I do not understand why the distribution of normals is not also a source of diffuse reflection?), since metals do no exhibit subsurface scattering. They are more deeply colored than primary reflection, since they result from light interacting multiple times with the surface.
 
 For all surfaces types, visible size of irregularities decresses as angle to the normal $\theta_i$ increases. This combines with the Fresnel effect to make surfaces appear highly reflective at glancing angles (lighting and viewing).
 
+TODO: classify the different types of reflections, and define generic [reflection](https://en.wikipedia.org/wiki/Reflection_(physics)#Reflection_of_light).
+The book differentiates _specular reflectance_ ("surface reflectance") from _subsurface reflectance_ (I suppose _diffuse reflectance_) p330.\
+This is consistent with what appears on wikipedia
+[Specular reflection](https://en.wikipedia.org/wiki/Specular_reflection) vs [Diffuse reflection](https://en.wikipedia.org/wiki/Diffuse_reflection).
+
+Microscale surface details can also affect _subsurface reflectance_.
+If microgeometry irregularities are larger than subsurface scattering distance,
+their shadowing and masking can cause _retroreflection_:
+"where light is preferentially reflected back toward its incoming direction" p330.
 
 #### Microfacet theory p 331
 
@@ -686,7 +767,7 @@ _Microfacet theory_ is a mathematical analysis of the effects of microgeometry o
 on which many BRDF models are based.
 The theory is based on the modeling of microgeometry as a collection of _microfacets_:
 * each is flat, with a single normal $\mathbf{m}$.
-* each individually reflectl ight according to the micro-BRDF $f_\mu(\mathbf{l}, \mathbf{v}, \mathbf{m})$. Their combined reflectance add up to the overall surface BRDF.
+* each individually reflects light according to the micro-BRDF $f_\mu(\mathbf{l}, \mathbf{v}, \mathbf{m})$. Their combined reflectances add up to the overall surface BRDF.
 
 The model has to define the statistical distribution of microfacet normals:
 * $D(\mathbf{m})$ is the _normal distribution function_ NDF (or _distribution of normals_).
@@ -695,12 +776,12 @@ The model has to define the statistical distribution of microfacet normals:
 the fraction of microfacets with normal $\mathbf{m}$ that are visible along view vector $\mathbf{v}$. (note: does not address shadowing).
 * The product $G_1(\mathbf{m}, \mathbf{v})D(\mathbf{m})$ is the _distribution of visible normals_.
 
-The projections of the microsurface and macrosurface onto the plane perpendicaly to any view direction are equal:
+The projections of the microsurface and macrosurface onto the plane perpendicular to any view direction are equal:
 
 $$
 \int_{m \in \Theta} D(\mathbf{m})(\mathbf{v} \cdot \mathbf{m}) d\mathbf{m}
 = \mathbf{v} \cdot \mathbf{n}
-\text{, dot products are NOT clamped to 0 (9.22)}
+\text{, dot products under integration are NOT clamped to 0 (9.22)}
 $$
 $$
 \int_{m \in \Theta} G_1(\mathbf{m}, \mathbf{v}) D(\mathbf{m})(\mathbf{v} \cdot \mathbf{m})^+ d\mathbf{m}
@@ -712,8 +793,8 @@ Heitz solved the dilemma (for now) as to which $G_1$ to use.
 From the masking function proposed in the litterature, only two satisfy equation 9.23:
 * Torrance-Sparrow "V-cavity".
 * Smith masking function.
-  * Closer match to behavior of random microsurfaces that Torrance-Sparrow.
-  * _normal-masking independance_: does not dependepns on the direction of $\mathbf{m}$ as long as it is frontfacing.
+  * Closer match to behavior of random microsurfaces than Torrance-Sparrow.
+  * _normal-masking independance_: does not depends on the direction of $\mathbf{m}$ as long as it is frontfacing.
   * drawbacks:
     * theoretically not consistent with structure of actual surfaces
     * practically, it is quite accurate for random surfaces, but less when there is a strong dependency between normal direction and masking.
@@ -737,7 +818,10 @@ f(\mathbf{l}, \mathbf{v}) =
     \frac{(\mathbf{m} \cdot \mathbf{l})^+}{|\mathbf{n} \cdot \mathbf{l}|}
     \frac{(\mathbf{m} \cdot \mathbf{v})^+}{|\mathbf{n} \cdot \mathbf{v}|}
     d\mathbf{m}
+\qquad \text{(9.26) p334}
 $$
+
+TODO: Get an intuition of for the two dot product ratios?
 
 $G_2(\mathbf{l}, \mathbf{v}, \mathbf{m})$ is the _joint masking-shadowing function_.
 It derives from $G_1$, and accounts for masking as well as shadowing (but not interreflection),
@@ -752,7 +836,7 @@ G_2(\mathbf{l}, \mathbf{v}, \mathbf{m}) =
      {1 + \Lambda(\mathbf{v}) + \Lambda(\mathbf{l})}
 $$
 
-For rendering, the general microfacet BRDF is used to derive a closed-form solution given a specific choice of micro-BRDF $f_\mu$.
+For rendering, the general microfacet BRDF $\text{(9.26)}$ is used to derive a closed-form solution given a specific choice of micro-BRDF $f_\mu$.
 
 #### BRDF models for surface reflection p336
 
@@ -779,7 +863,9 @@ f_{\text{spec}}(\mathbf{l}, \mathbf{v}) =
 }
 $$
 
-Note: the book points at optimization to avoid calculating $\mathbf{h}$ and to remove $\chi^+$.
+TODO: is $F(\mathbf{h}, \mathbf{l})$ used as the micro-BRDF $f_\mu(\mathbf{l}, \mathbf{v}, \mathbf{m})$? It would make some sense, since the microfacet are perfect mirrors (their whole contribution is the reflectance).
+
+Note: the book points at optimization to avoid calculating $\mathbf{h}$ and to remove $\chi^+$ p337.
 
 Now formulas for the NDF $D$ and the masking-shadowing function $G_2$ must be found.
 
@@ -791,7 +877,7 @@ The shape of the NDF determines the width and shape of the cone of reflected ray
 ###### Isotropic NDF p338
 
 An isotropic NDF is _shape-invariant_ if the effect of its roughness parameter is equivalent to scaling the microsurface.
-* An arbitrary isotropic NDF has a $\Lambda$ function depending on two variables, roughness and incidence angle.
+* An arbitrary isotropic NDF has a $\Lambda$ function depending on two variables, roughness $\alpha$ and incidence angle.
 * For a shape-invariant NDF, $\Lambda$ only depends on variable $a$
   (with $\mathbf{s}$ replaced by either $\mathbf{v}$ or $\mathbf{l})$:
   $$
@@ -817,7 +903,7 @@ Isotropic Normal Distribution Functions:
       $ \alpha_p = 2 \alpha_b^{-2} - 2$.
   * It is not shape-invariant, and an analytic form for its $\Lambda$ function does not exist.
     * Walter et al. suggest using the Beckmann $\Lambda$ with the parameter equivalent function above.
-* _Throwbridge-Reitz distribution_ NDF p340(recommended by Blinn in a 1977 paper)
+* _Trowbridge-Reitz distribution_ NDF p340(recommended by Blinn in a 1977 paper)
   was rediscovered by Walter et al. who named it _GGX distribution_,
   which is now the common name.
   $$
@@ -839,7 +925,26 @@ Isotropic Normal Distribution Functions:
   \frac{-1 + \sqrt{1 + \frac{1}{a^2}}}{2}
   $$
     * note: $a$ only appears squared, which avoids a squareroot to compute it.
-  * the popularity of GGC distribution and Smith masking-shadowing function has lead to several optimizations for combination of the two p341.
+  * the popularity of GGX distribution and Smith masking-shadowing function has lead to several optimizations for combination of the two p341. Notably:
+  $$
+  \frac
+    {G_2(\mathbf{l}, \mathbf{v})}
+    {4|\mathbf{n} \cdot \mathbf{l}||\mathbf{n} \cdot \mathbf{v}|} \Longrightarrow
+  $$
+  $$
+  \frac
+    {0.5}
+    {
+      (\mathbf{n} \cdot \mathbf{v})^+
+       \sqrt{\alpha_g^2 + (\mathbf{n} \cdot \mathbf{l})^+
+             ((\mathbf{n} \cdot \mathbf{l})^+ - \alpha_g^2 (\mathbf{n} \cdot \mathbf{l})^+)}
+      +
+      (\mathbf{n} \cdot \mathbf{l})^+
+       \sqrt{\alpha_g^2 + (\mathbf{n} \cdot \mathbf{v})^+
+             ((\mathbf{n} \cdot \mathbf{v})^+ - \alpha_g^2 (\mathbf{n} \cdot \mathbf{v})^+)}
+    }
+\qquad \text{(9.43)}
+  $$
 * _generalized Throwbridge-Reitz_ (GTR) p342 NDF goal is to allow more control over the NDF's shape (specifically the tail). It is not shape-invariant.
 * _Student's t-distribution_ STD and _exponential poweer distribution_ EPD p343 are shape invariant, and quite new (unclear if they will find use atm).
 
@@ -848,12 +953,12 @@ An alternative to increasing NDF complexity is to use multiple specular lobes p3
 
 ###### Anisotropic NDF p343
 
-TODO what is $\theta_m$ p343? Is it the elevation (polar) angle of the microfacet compared to the macrosurface normal $\mathbf{n}$?
+Note $\theta_m$ Is (polar) angle of the microfacet normal with the macrosurface normal $\mathbf{n}$.
 
 Rough outline:
 * The tangent and bitangent have to be perturbed by the normal map (and an optional _tangent map_) to obtain the TBN frame where $\mathbf{m}$ is expressed. p344
 * Obtain an anisotropic version of the NDF, presented for _Beckmann NDF_ and _GGX NDF_ p345
-* Optionally use a custom parameterizaion for both roughness $\alpha_x$ and $\alpha_y$. Presented for **Disney principled shading model** and **Imageworks**.
+* Optionally use a custom parameterization for both roughness $\alpha_x$ and $\alpha_y$. Presented for **Disney principled shading model** and **Imageworks**.
 
 ##### Multiple-bounce surface reflection
 
@@ -878,16 +983,15 @@ $$
   * $R_{\text{sF1}}$ depends on $\alpha$ and $\theta$, it can be precomputed numerically (32x32 texture is enough according to Imageworks).
 * $\overline{F}$ and $\overline{R_{\text{sF1}}}$ are the cosine weighted averages over the hemisphere.
     * $\overline{F}$ closed forms are provided p346
-    * $\overline{R_{\text{sF1}}}$ can be precomputed in a 1D texture (or curve-fitted), it depends only on $\alpha$, see p346
+    * $\overline{R_{\text{sF1}}}$ can be precomputed in a 1D texture (or curve-fitted), it solely depends on $\alpha$, see p346
 
 #### BRDF models for subsurface scattering p347
-
-TODO: Surface reflection are equaled to specular reflection, understand that...
 
 Scoped to local subsurface scattering (diffuse surface response in opaque dielectrics)
 
 Subsurface albedo $\rho_\text{ss}$ is the ratio of energy (of light) that escape a surface compared to the energy entering the interior of the material.
-It is modeled as an RGB value (a spectral distribution).
+It is modeled as an RGB value (a spectral distribution), and often referred as the _diffuse color_ of the surface (Similarly $F_0$ is often referred as the _specular color_ of the surface).
+It seems it might also be referred as the _diffuse reflectance_, p450.
 It is related to the scattering albedo (chapter 14)
 
 For dielectrics, it is usually brighter than the specular color $F_0$.
@@ -898,31 +1002,52 @@ Thus it typically has a different spectral distribution than $F_0$.
 
 Some BRDF models for local subsurface scattering take roughness into account by using a diffuse micro-BRDF $f_\mu$ (microfacet theory), some do not:
 * If microgeometry irregularities are larger than subsurface scattering distances, microgeometry-related effects such as retroreflection occur.
-A rough-surface diffused model is used, typically treating ss as local to each microfacet, thus only affectiong the micro-BRDF $f_\mu$.
+  * A rough-surface diffuse model is used, typically treating ss as local to each microfacet,
+thus only affecting the micro-BRDF $f_\mu$.
 * If scattering distances are larger than microgeometry irregularities, the surface should be considered flat when modeling subsurface scattering (retroreflection does not occur).
-Subsurface scattering is not local to a microfacter, thus cannot be modeled via microfacet theory.
-A smooth-surface diffuse model should be used.
+Subsurface scattering is not local to a microfacet, thus cannot be modeled via microfacet theory.
+  * A smooth-surface diffuse model should be used.
 
 
-##### Smooth-surface subsurface models p351
+##### Smooth-surface subsurface models p350
 
-Diffuse shading is not directly affecty by roughness.
+Diffuse shading is not directly affected by roughness.
 
-TODO: why is the flat mirror using $F(\mathbf{n}, \mathbf{l})$ and the microfacet specular term using $F(\mathbf{h}, \mathbf{l})$? I suppose this changed appeared earlier in the chapter.
+* local subsurface scattering is often modelled with a Lambertian term:
+  $$
+  f_\text{diff}(\mathbf{l}, \mathbf{v}) = \frac{\rho_\text{ss}}{\pi}
+  $$
 
-See section for a selection of available equations.
+* It can be improved by an energy trade-off with the surface (specular) reflectance:
+  * If the specular term is a microfacet BRDF term:
+    $$
+    f_\text{diff}(\mathbf{l}, \mathbf{v}) =
+    (1 - F(\mathbf{h}, \mathbf{l})) \frac{\rho_\text{ss}}{\pi}
+    \qquad \text{(9.63)}
+    $$
+  * If the specular term is a flat mirror:
+    $$
+    f_\text{diff}(\mathbf{l}, \mathbf{v}) = (1 - F(\mathbf{n}, \mathbf{l})) \frac{\rho_\text{ss}}{\pi}
+    \qquad \text{(9.62)}
+    $$
+
+**Note**: The flat mirror using $F(\mathbf{n}, \mathbf{l})$ and the microfacet specular term using $F(\mathbf{h}, \mathbf{l})$.
+This is consistent with the fact that for microfacet BRDF, we had set $m = h$.
+
+See section for a larger selection of available equations.
 
 
 ##### Rough-surface subsurface models p353
 
 * _Disney diffuse_ model p353
- * by default, use the same roughness as the specular BRDF, which limits materials.
-   But a separate "diffuse roughnes" could be easily added
- * Apparently not derived from microfacet theory
+  * by default, use the same roughness as the specular BRDF, which limits materials.
+    But a separate "diffuse roughnes" could be easily added
+  * Apparently not derived from microfacet theory
 * Oren-Nayar BRDF (the most-well known) p354
+  * Assume a microsurface with quite different NDF and masking-shadowing than those used in current specular models.
 * Derivations from the isotropic GGX NDF:
-  * Gotanda p355. Does not account for interreflections, has a complext fitted function.
-  * Hammon p355. Uses interreflections, fairly simple fitter function.
+  * Gotanda p355. Does not account for interreflections, has a complex fitted-function.
+  * Hammon p355. Uses interreflections, fairly simple fitted-function.
     * Fundamentally assumes that irregularities are larger than scattering distances, which may limit materials it can model.
 
 #### Cloth p356
@@ -965,7 +1090,7 @@ Visual effect of clear-coat:
 Ideally, when blending between materials (when staking, or at mask soft-boundaries),
 the corect approach would be to compute each material, then blend linearly between them.
 The same result is achieved by blending the linear parameters and computing the material,
-but blending non-linear BRDF parameters is theretically unsound.
+but blending non-linear BRDF parameters is theoretically unsound.
 Yet, in real-time rendering, this is the usual approach, and the results are satisfying.
 
 Blending normal-maps requires special consideration
@@ -976,7 +1101,7 @@ Blending normal-maps requires special consideration
 _specular antialiasing_ techniques mitigate flickering highlights due to specular aliasing.
 (e.g. due to linearly filtering normals, or BRDF roughness,
 which have an non-linear relationship to the final color).
-There are other potential artifacts (e.g. unexpected changes in gloss with viewer distance), butspecular aliasing is usually the most noticeable issue.
+There are other potential artifacts (e.g. unexpected changes in gloss with viewer distance), but specular aliasing is usually the most noticeable issue.
 
 
 ##### Filtering normals and normal distributions p367
@@ -1003,3 +1128,341 @@ There is another family of mapping techniques (based on mapping the covariance m
 
 TODO: understand what are the variance mapping techniques.
 _variance mapping_ family of techniques is commonly used for static normal-maps predominent in real-time rendering.
+
+## Chapter 10 - Local Illumination p375
+
+There are two solid angles to correctly apply reflectance equation to shade a pixel:
+* solid angle covered by the pixel projection on the surface. (Addressed in chapter 9, see note below.)
+* solid angle sustaining all radiance from a light.
+
+Note:
+figure 10.2 states that chapter 9 presented the integral over the projected footprint of the pixel on the surface.
+I suppose this is notably because the different texture maps (normal, roughness, ...) should ideally represent
+the averaged value over the fragment surface (especially approaching 1:1 fragment to texel).
+And the NDF averages the microscale effect at the scale of a fragment.
+
+This chapter aims to take extend shading with the solid angle _subtended_ by actual lights
+(i.e. not punctual).
+
+### 10.1 Area Light Source p377
+
+An area light source brightness is represented by its radiance $L_l$.\
+It subtends a solid angle $\omega_l$ of the hemisphere $\Omega$
+of possible incoming light directions around surface normal $\mathbf{n}$.\
+The area light contribution to the outgoing radiance in direction $\mathbf{v}$ is given
+by the reflectance equation (presented with the fundamental approximation behind infinitesimal light source) :
+$$
+L_o(\mathbf{v}) =
+\int_{l \in \omega_l} f(\mathbf{l}, \mathbf{v}) L_l (\mathbf{n} \cdot \mathbf{l})^+ d\mathbf{l}
+\approx \pi f(\mathbf{l_c}, \mathbf{v}) \mathbf{c}_\text{light} (\mathbf{n} \cdot \mathbf{l_c})^+
+\qquad \text{(10.1)}
+$$
+
+
+Punctual and directional lights are approximations, thus introducing visual errors depending on two factors:
+* size of the light source (measured as the solid angle it covers from the shaded point). Smaller is less error.
+* glossiness of the surface. Rougher is less error.
+
+Observations:
+* For a given difference in subtended angle, rougher surface show less size difference in resulting specular highlight.
+* The rougher the surfaces, the larger the specular highlight
+
+
+#### Lambertian surfaces
+
+For Lambertian surface, area light can be computed exactly using a point light.
+For such surfaces, outgoing radiance is proportional to the irradience $E$ (TODO: why?):
+$$
+L_o(\mathbf{v}) = \frac{\rho_\text{ss}}{\pi}E
+\qquad \text{(10.2)}
+$$
+
+_vector irradiance_ (initially introduced as _light vector_) $\mathbf{e}(\mathbf{p})$
+allows to convert an area light source (or several) into a point or directional light source.
+$$
+\mathbf{e}(\mathbf{p}) =
+\int_{\mathbf{l} \in \Theta} L_i(\mathbf{p}, \mathbf{l}) \mathbf{l} d\mathbf{l}
+\qquad \text{(10.4)}
+$$
+(where $\Theta$ is the whole sphere)
+
+**IMPORTANT**: following derivations are correct **only** if there is no "negative side" irrandiance.
+
+The general solution is then to use the substitutions:
+$$
+\mathbf{l}_c = \frac{\mathbf{e}(\mathbf{p})}{|| \mathbf{e}(\mathbf{p}) ||}
+$$
+$$
+\mathbf{c}_\text{light} =
+\mathbf{c}' \frac{|| \mathbf{e}(\mathbf{p}) ||}{\pi}
+\qquad \text{(10.7)}
+$$
+
+TODO: I did not understand the derivation in this section
+
+##### Special case of spherical light
+
+For a spherical light source centered at $\mathbf{p}_l$ with radius $r_l$.
+It emits a constant radiance $L_l$ from every point on the sphere, in all directions:
+
+$$
+\mathbf{l}_c = \frac{\mathbf{p}_l - \mathbf{p}}{|| \mathbf{p}_l - \mathbf{p} ||}
+$$
+$$
+\mathbf{c}_\text{light} =
+\frac{r_l^2}{|| \mathbf{p}_l - \mathbf{p} ||^2}
+L_l
+\qquad \text{(10.8)}
+$$
+
+Which is the same as an omni light with $c_{\text{light}_0} = L_l$, $r_0 = r_l$, and a standard
+inverse square distance falloff.
+
+##### wrap lighting
+
+_wrap lighting_ seems to mean a lighting that "wraps" the scene.
+It is achieved in rendering by modifying the usual $\mathbf{n} \cdot \mathbf{l}$ value before clamping it to 0.
+TODO: get a more rigorous definition
+
+From the observation that effects of area lighting are less noticeable for rough surface :
+wrap lighting gives a less physically based but effective method to model area lighting
+of Lambertian surfaces.
+
+$$
+E = \pi c_\text{light}
+    \left( \frac{(\mathbf{n} \cdot \mathbf{l}) + k_\text{wrap}}{1 + k_\text{wrap}} \right)^+
+\qquad \text{(10.9)}
+$$
+
+with $k_\text{wrap}$ in the range $0$ (point light) to $1$ (area light covering the hemisphere).
+
+Valve form to mimic a large area light:
+
+$$
+E = \pi c_\text{light}
+    \left( \frac{(\mathbf{n} \cdot \mathbf{l}) + 1}{2} \right)^2
+\qquad \text{(10.10)}
+$$
+
+#### 10.1.1 Glossy Materials p382
+
+Model the effect of area lights on non-Lambertian materials:
+* Primary effect is the highlight, with size and shape similar to the area light
+  (edge blurred according to roughness)
+
+Usual methods (which is used in real-time rendering for a variety of problems) are based on finding,
+per shaded point, an equivalent punctual light setup that would mimic the effect
+of non-infinitesimal light.
+
+* Mittring's _roughness modifification_ p383 alters roughness parameter to reshape the BRDF specular lobe.
+  * Karis applies it to GGX BRDF and spherical area light:
+$$
+\alpha' = \left( \alpha_g + \frac{r_l}{ 2 || \mathbf{p}_l - \mathbf{p} || } \right)^\mp
+$$
+    * breaks for very shiny materials.
+
+* _most representative point_ solution p384 represent area lights with a light direction that changes
+  with the point being shaded: the light vector is set to the direction of the point on the area
+  light contributing the most energy toward the surface.
+  * Note: This ressemble the idea of _importance sampling_ in _Monte Carlo integration_
+  (numerically computing a definite integral by averaging samples over the integration domain).
+      * _importance sampling_: prioritize samples with a large contribution to the overall average,
+        which is a _variance reduction_ technique.
+      * Monte Carlo integration is based on sequence of pseudo-random numbers
+      * Quasi-Monte Carlo, by contrast use low-discrepency sequences (also called quasi-random sequences)
+
+
+#### 10.1.2 General Light Shapes p 386
+
+* _tube lights_ or _capsules_ p387
+* _planar area lights_ p388 are defined as a section of a plane bound by a geometrical shape:
+  * _card light_ are bound by rectangle
+    * Drobot developed one of the first practical approximations p388
+      (a representative point solution)
+  * _disk lights_ are bound by a disk
+  * _polygonal area lights_ are bound by a polygon
+    * Lambert, refined by Arvo then Lecocq, for glossy materials modeled as Phong specular lobes p389
+
+A different approach is _linearly transformed cosines_ (LTCs) p390
+is practical, accurate and general (more expensive that representative point, but much more accurate).\
+Cosines on the sphere are expressive (via linear transformation) and can be integrated easily
+over arbitrary spherical polygon.
+The key observation is that integration of the LTC (with 3x3 transform $T$) over a domain
+is equal to the integral of the cosine lobe over the domain transformed by $T^{-1}$.
+
+Approximations have to be found to express generic BRDFs as one or more LTCs over the sphere.
+
+### 10.2 Environment Lighting p391
+
+Although there is not physical difference, in practice implementations distinguish between:
+* direct light usually with relatively small solid angle and high radiance (should cast shadows).
+* indirect light tends to diffusely cover the the whole hemisphere, with moderate to low radiance.
+
+**Note**: This section talks about indirect and environment lighting,
+but does not investigate global illumination.
+The distinction is that the shading does not depend on the other surfaces in the scene,
+but rather on a small set of light primitives.
+(i.e. the shading algorithm receives light sources as input, not other geometry).
+
+#### Ambient light
+
+Simplest model of environment lighting is _ambient light_: the radiance does not vary with direction,
+it has constant value $L_A$.
+
+For arbitrary BRDF, the integral is the same as the directional albedo $R(\mathbf{v})$:
+$$
+L_o(\mathbf{v}) =
+L_A \int_{\mathbf{l} \in \Omega}{f(\mathbf{l}, \mathbf{v}) (\mathbf{n} \cdot \mathbf{l}) d\mathbf{l}} =
+L_A R(\mathbf{v})
+$$
+
+And for the particual case of Lambertian surfaces:
+$$
+L_o(\mathbf{v}) =
+\frac{\rho_\text{ss}}{\pi} L_A \int_{\mathbf{l} \in \Omega}{(\mathbf{n} \cdot \mathbf{l}) d\mathbf{l}} =
+\rho_\text{ss} L_A
+$$
+
+### 10.3 Spherical and Hemispherical Functions p392
+
+To extend environment lighting beyond a constant term, incoming radiance should
+depend on direction onto the object.
+This can be represented by _spherical functions_: defined over the surface of the unit sphere,
+or over the space of direction in $\mathbb{R}^3$. This domain is denoted $S$.
+
+_spherical bases_ are the representations, presented later TODO: define much better
+
+_projection_ is converting a function to a given representation.\
+_reconstruction_ is evaluating the value of a fuction from a given representation.
+
+
+#### 10.3.1 Simple Tabulated Forms
+
+Representation is a table of values associated to a selection of several directions.
+Evaluation involves finding a number of samples around the evaluation direction and reconstructing
+the value with some interpolation.
+
+_Ambient cube_ (AC) is one of the simplest tabulated forms p395.
+It is equivalent to a cube map with a single texel on each cube face.
+
+#### 10.3.2 Spherical Bases p395
+
+Spherical radial basis functions (SRBF) p396:
+* _Spherical Gaussians_ (SG) (or _von Mises-Fisher distribution_ in directional statistics) p397
+  * One drawback is their _global support_: each lobe is non-zero for the entire sphere.
+    Thus if N lobes are used to represent a function, all N lobes are needed for reconstruction.
+* _Spherical harmonics_ (SH) p398 (more rigorously: _real spherical harmonics_, only the real-part)
+* _Linearly Transformed Cosines_ (LTC) representatin can efficiently approximate BRDFs.
+* _Spherical wavelets_ p402 basis balances locality in space (compact support) and in frequency (smoothness).
+* Spherical piecewise constant basis functions
+* Biclustering approximations
+
+#### 10.3.3 Hemispherical Bases p402
+
+For hemispherical functions, half of the signal is zero, hemispherical bases are less wasteful.
+This is especially relevant for functions defined over surfaces
+(BRDF, incoming radiance, irradiance arriving at a point).
+
+* _Ambient/Highlight/Direction_ (AHD) basis p402 TODO: understand
+* _Radiosity normal mapping_ (or _Half-Life 2 basis_) p402 TODO: understand
+  * works well for directional irradiance
+* _Hemispherical harmonics_ (HSHs), specialize spherical harmonics to the hemispherical domain.
+  * _H-basis_ take part of the SH basis for longitudinal parameterization and parts of the HSH for latitudinal.
+    * Allows for efficient evaluation
+
+### 10.4 Environment Mapping p404
+
+_Environment mapping_: records a spherical function in one or more images.
+(Typically uses texture mapping to implement lookups in the table).
+* This is a powerful and popular form of environment lighting.
+* Trades a large memory usage for simple and fast decode.
+* Highly expressive:
+  * higher frequency by increasing resolution
+  * higher range of radiances by increasing bit depth of channels
+
+A limitation of environment mapping: it does not work well with large flat surfaces.
+They will result in a small port of the environment table mapped onto a large surface.
+
+_Image-based lighting_ (IBL) p406 is another name for illuminating a scene with texture data,
+typically when the environment map is obtained from real-world HDR 360° panoramic photographs.
+
+Shading techniques make approximations and assumptions on the BRDF to perform the integration
+of the environment lighting:
+* _reflection mapping_: most basic case of environment mapping, assuming the BRDF is a perfect mirror.
+  * An optically flat surface, or mirror, reflects an incoming ray of light to the light's reflection direction $\mathbf{r}_i$.
+    Outgoing radiance includes incoming radiance from just **one** direction (reflected view vector $\mathbf{r}$).
+  * Reflectance equation for mirrors is greatly simplified:
+    $$ L_o(\mathbf{v}) = F(\mathbf{n}, \mathbf{r}) L_i(\mathbf{r}) \qquad \text{(10.29)}$$
+    * $L_i$ only depends on the direction, it can be stored in a two-dimensionnal table (the textures),
+      called an _environment map_.
+    * Access information is computed by using some _projector function_: maps $r$ into one or more textures.
+
+A variety of projector functions:
+* _Latitude-longitude mapping_ (or _lat-long mapping_) p406
+  * Keeps distance between latitude lines constant, unlike Mercator projection
+* _Sphere mapping_ p408
+  * Texture image is derived from the environment viewed orthographically in a perflectly reflective sphere:
+    the circular texture is called a _sphere map_
+    or _light probe_ (it captures the lighting situation at the sphere's location) .
+    * Photographs of spherical probes is an efficient method to capture image-based lighting.
+  * Drawback is that the sphere map captures a view of the environment only valid for a single view direction.
+    * Conversion to other view directions is possible, but can result in artifacts due to magnification
+      and singularity around the edge.
+  * The reflectance equation can be solved for an arbitrary isotropic BRDF and results stored in a sphere map.
+    * This BRDF migh include diffuse, specular, retroreflection, and other terms.
+  * Several sphere maps might be indexed,
+    e.g. one with reflection vector, one with surface normal to simulate specular and diffuse environment effects.
+* _Cube mapping_ p410
+  * Most popular tabular representation for environment lighting, implemented in hardware by most modern GPUs.
+  * Accesses a _cube map_ (originally _cubic environment map_), created by projectiong environment
+    onto the sides of a cube.
+  * _view-independent_ (unlike sphere mapping) and has more uniform sampling that lat-long mapping.
+    * _isocube_ mapping p412 has even lower sampling-rate discrepencies while using same hardware.
+* _Dual paraboloid environment mapping_ p413
+* _Octahedral mapping_ p413 maps the surrounding sphere to an octahedron (instead of a cube)
+  * good alternative when cube map texture hardware is not present
+  * can also be used as compression method to express 3D directions (normalized vectors)
+    using 2 coordinates.
+
+### 10.5 Specular Image-Based Lighting p414
+
+Extension of environment mapping, originally developed for rendering mirror-like surfaces,
+to glossy reflections.\
+The environment map also called _specular light probe_ when used to simulated general specular
+effects for infinitely distant light sources
+
+**Note**: _probing_ term is used because the map captures the radiance from all
+directions at a given point in the scene.
+
+_specular cube maps_ is used for the common case of storing in cube maps.
+
+TODO: p423 fig. 10.38 understand why the GGX BRDF lobe, in red, is stronger when the polar coordinate is larger than this of the reflection vector.
+I would expect it to be the other way, as masking-shadowing should be larger as incoming light gets further away from the surface normal and $\mathbf{n} \cdot \mathbf{l}$ gets smaller (which seems to be consistent with the "off-specular" figure 11 of mftpbr).
+
+### 10.6 Irradiance Environment Mapping p424
+
+Categorization:
+* Environment maps for specular reflections:
+  * Indexed by the reflection direction (potentially skewed).
+  * Contain **radiance** values.
+  * Unfiltered: used for mirror reflections.
+    * Contain incoming radiance values, along the sampled direction.
+  * Filtered: used for glossy reflections.
+    * Contain outgoing radiances values, along the view vector reflecting the sampled direction.
+* Environment maps for diffuses reflections:
+  * Indexed by the surface normal.
+  * Contain **irradiance** values.
+
+#### Other representations
+
+_Precomputed radiance transport_ (PRT) is the general idea of precomputing lighting to account for all interactions.
+
+### 10.7 Sources of Error
+
+A common real-time engine approach:
+* Model a few important lights analytically. Approximate integrals over light area and compute shadow maps for occlusion
+* Other light sources (distant, sky, fill, light bounces over surfaces) are represented:
+  * by environment cube maps for the specular component
+  * by spherical bases for diffuse irradiance
+
+In such mix of technique, the consistency between different forms of lighting might be more important than absolute error committed by each.
