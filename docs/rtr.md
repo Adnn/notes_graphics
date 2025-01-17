@@ -1,5 +1,34 @@
 # Real-Time Rendering - 4th edition
 
+## Questions
+
+* What is _photon mapping_?
+
+* List all of the physical light/matter interaction: scattering, absorption, emission.
+
+* Seems that the book divides specular reflections between mirror reflections (perfect, BRDF is a single ray?)
+and glossy reflections (with a roughness > 0).
+
+* Is subsurface scattering (and in particular the radiance it causes) considered reflection?
+  p438 "[...] plus the reflected radiance" seems to imply it.
+
+* Make a note with clear distinction, physical explanations, intuitive behaviours, dependence to light and view directions, ... :
+  * diffuse illumination (independent of viewing angle: uniform appearance of light accross the surface, intensity of scaterred light primarly depends on angle of incidence: I suppose that is why it care about irradiance, all incoming lights will contribute, modulated by cos, to any viewing direction)
+  * specular illumination (create highlights, strongly view dependent: intensity is strongest along specular direction determined by the incident angle and surface normal. It cares about radiance: only the limited set of incoming directions resulting in a specular component along viewing direction are of interest.)
+
+| Feature                     | Specular Reflection                       | Diffuse Reflection                      |
+|-----------------------------|-------------------------------------------|-----------------------------------------|
+| **Surface Quality**          | Smooth surfaces                          | Rough surfaces                          |
+| **Reflection Directionality**| Light is reflected in a single direction | Light is scattered in all directions    |
+| **Dependence on View Angle** | Highly dependent                         | Largely independent                     |
+| **Example Surfaces**         | Polished metal, glass, water             | Matte paint, paper, unpolished wood     |
+
+
+
+
+
+
+
 ## Effects and subset glossary
 
 User controlled clipping planes via FS `discard`
@@ -10,6 +39,7 @@ It was given rise by the availability of _multiple render targets_ (MRT) p51
 Deferred shading is categorized as:
 * a type of _rendering pipeline_, and then as a class of _rendering method_ p51.
 * a _technique_ p127
+* a _rendering scheme_ p500.
 
 _Parallax_ is the impact the observer's viewpoint have on the observation of an object.
 (And apparently, the change in what is observed as the viewpoint changes).
@@ -1352,7 +1382,7 @@ Spherical radial basis functions (SRBF) p396:
   * One drawback is their _global support_: each lobe is non-zero for the entire sphere.
     Thus if N lobes are used to represent a function, all N lobes are needed for reconstruction.
 * _Spherical harmonics_ (SH) p398 (more rigorously: _real spherical harmonics_, only the real-part)
-* _Linearly Transformed Cosines_ (LTC) representatin can efficiently approximate BRDFs.
+* _Linearly Transformed Cosines_ (LTC) representation can efficiently approximate BRDFs.
 * _Spherical wavelets_ p402 basis balances locality in space (compact support) and in frequency (smoothness).
 * Spherical piecewise constant basis functions
 * Biclustering approximations
@@ -1381,7 +1411,7 @@ _Environment mapping_: records a spherical function in one or more images.
   * higher range of radiances by increasing bit depth of channels
 
 A limitation of environment mapping: it does not work well with large flat surfaces.
-They will result in a small port of the environment table mapped onto a large surface.
+They will result in a small part of the environment table mapped onto a large surface.
 
 _Image-based lighting_ (IBL) p406 is another name for illuminating a scene with texture data,
 typically when the environment map is obtained from real-world HDR 360° panoramic photographs.
@@ -1414,7 +1444,7 @@ A variety of projector functions:
     e.g. one with reflection vector, one with surface normal to simulate specular and diffuse environment effects.
 * _Cube mapping_ p410
   * Most popular tabular representation for environment lighting, implemented in hardware by most modern GPUs.
-  * Accesses a _cube map_ (originally _cubic environment map_), created by projectiong environment
+  * Accesses a _cube map_ (originally _cubic environment map_), created by projecting environment
     onto the sides of a cube.
   * _view-independent_ (unlike sphere mapping) and has more uniform sampling that lat-long mapping.
     * _isocube_ mapping p412 has even lower sampling-rate discrepencies while using same hardware.
@@ -1428,7 +1458,7 @@ A variety of projector functions:
 
 Extension of environment mapping, originally developed for rendering mirror-like surfaces,
 to glossy reflections.\
-The environment map also called _specular light probe_ when used to simulated general specular
+The environment map also called _specular light probe_ when used to simulate general specular
 effects for infinitely distant light sources
 
 **Note**: _probing_ term is used because the map captures the radiance from all
@@ -1466,3 +1496,637 @@ A common real-time engine approach:
   * by spherical bases for diffuse irradiance
 
 In such mix of technique, the consistency between different forms of lighting might be more important than absolute error committed by each.
+
+## Chapter 11 Global Illumniation - p437
+
+_Radiance_ is the final quantity computed by the rendering process.
+So far we used the _reflectance equation_.
+
+### 11.1 The Rendering Equation p437
+
+The full _rendering equation_ was presented by Kajiya in 1986.
+We use the following form:
+
+$$
+L_o(\mathbf{p}, \mathbf{v}) =
+L_e(\mathbf{p}, \mathbf{v})
++
+\int_{\mathbf{l} \in \Omega}{
+    f(\mathbf{l}, \mathbf{v})
+    L_o(r(\mathbf{p}, \mathbf{l}), -\mathbf{l})
+    (\mathbf{n} \cdot \mathbf{l})^+
+    d\mathbf{l}}
+\qquad\text{(11.2)}
+$$
+
+With the following differences from the _reflectance equation_:
+* $L_e(\mathbf{p}, \mathbf{v})$ is the emitted radiance from location $\mathbf{p}$ in direction $\mathbf{v}$.
+* $L_o(r(\mathbf{p}, \mathbf{l}), -\mathbf{l})$ (replacing $L_i(\mathbf{p}, \mathbf{l})$) states that
+  incoming radiance at $\mathbf{p}$ from $\mathbf{l}$ is equal to the outgoing radiance
+  from another point defined by $r(\mathbf{p}, \mathbf{l})$ in the opposite direction $-\mathbf{l}$.
+  * $r(\mathbf{p}, \mathbf{l})$ is the _ray casting function_, it returns the location of the first
+  surface point hit by a ray cast from $\mathbf{p}$ along direction $\mathbf{l}$.
+
+Defining $L_o$ in term of the integration of other $L_o$ makes it a recursive integral.
+
+Important properties of the _rendering equation_:
+* It is _linear_ with respecte to the emitted lighting
+  (scaling the light sources scale the result by same factor).
+* The response for each light is independent from all other sources
+  (thus each could be computed in isolation).
+
+The local lighting model need the surface data only at visible points to compute the lighting.
+(Common in real-time rendering, being what GPUs are most efficient: processing primitives independently).
+
+Transparency, reflections, shadows are thus example of _global illuminations_ algorithms
+(using information from other surfaces than the point currently illuminated).
+
+Alternatively, in local lighting model, photons travel from the light to a surface (illuminated point) then to the eye. Above _global illuminations_ effects consider interaction of photons with other intervening objects:
+* Shadowing consider intervening objects' direct occlusion
+* Reflections can use environment or irradiance map to capture light reaching distant objects
+  and reflect it to compute the illumination of local surfaces.
+
+Heckbert developed a notational scheme to formally describe the paths simulated by a technique:
+* $L$: light
+* $E$: eye
+* $D$: diffuse photon interaction
+* $S$: specular photon interaction
+
+Note: Categorization can be extended. Defines "glossy" as: shiny but not mirror-like (p439).
+
+Algorithms are briefly summarized via regular expressions describing what interaction they simulate.
+e.g.:
+* Direct illumination: $L(D|S)E$. If light have a geometry and go directly to the eye: $L(D|S)?E$.
+* Environment mapping: $L(D|(S|D)?S)E$
+* The rendering equation: $L(D|S)*E$.
+
+_Global illumination_ research focuses on methods to compute light transport along some of these paths.Two common strategies are to simplify and to precompute.
+
+TODO: define _light transport_
+
+### 11.2 General Global Illumination p441
+
+Algorithms to solve the fulle rendering equation:
+instead of incoming radiance $L_i$ being given, radiance is emitted or reflected from other points.
+
+#### 11.2.1 Radiosity p442
+
+_Radiosity_ was the first CG technique to simulate bouched light between **diffuse** surfaces: $LD*E$.
+It can compute interreflections ans soft shadows.
+The name comes from the quantity that is computed by the algorithm.
+
+It relies on the finite element method and consider each surface a light source at equilibrium.
+
+Radiosity see each surface as composed of some patches, each with an average radiosity value.
+The radiosity for patch $i$ is:
+$$
+B_i = B^e_i + \rho_{ss} \sum_j{F_{ij} B_j}
+\qquad\text{(11.4)}
+$$
+
+* $B^e_i$ is the radiant _exitance_ of patch $i$ (the radiosity it emits). Non-zero only for light sources.
+* $\rho_{ss}$ is the subsurface albodo.
+* $F_{ij}$ is the _form factor_ between patches $i$ and $j$, a geometric term giving the fraction of
+  uniform diffuse randiant energy leaving patch $i$ that is incident upon patch $j$.
+  These fractions add up to $1$:
+  (TODO: are patch indices reversed? We copied the book)
+  * $$
+    F_{ij} = \frac{1}{A_i}
+    \int_{A_i}{
+        \int_{A_j}{
+            V(\mathbf{i}, \mathbf{j})
+            \frac{\cos{\theta_i} \cos{\theta_j}}{\pi d^2_{ij}}
+            da_i da_j
+        }
+    }
+    \qquad\text{(11.5)}
+    $$
+      * $A_i$, $A_j$: the areas of patches $i$ and $j$.
+      * $V(\mathbf{i}, \mathbf{j})$: the visibility function between points $i$ and $j$
+        ($0$ if occluded, $1$ otherwise).
+      * $\theta_i$, $\theta_j$: angle between the patch normal and the ray connecting points $i$ and $j$.
+      * $d_{ij}$: length of the ray (distance between points $i$ and $j$).
+
+Equations (11.4) for all patches are combined in a single linear system that is then solved to obtain
+the radiosity value for every patch.
+
+#### Ray Tracing 11.2.2
+
+* _ray casting_ is the process of firing a ray from a location to determine what objects are in a particular direction (i.e. visibility?)
+* _ray tracing_ uses rays to determine light transport between scene elements.
+
+Classical ray tracing / most basic form: shot rays from camera through pixel grid.
+From the closest hit, shoot rays toward light (determine shadow or transparent attenuation/refraction), in reflected or refracted direction, as approriate.
+It is limited to hard shadows, sharp reflections and refractions.
+Is it what is called a _Whitted_ raytracer? (from Turner Whitted).
+
+
+This underlying principle can be used to solve the full rendering equation $L(D|S)*E$.
+Shooting rays and evaluating how much light they carry is used to compute the integral in (11.2).
+Because of the recursion, for every ray the integral is evaluated again at the intersection. Integrals are evaluated via _Monte Carlo_ methods.
+
+Ray are shot to point-sample the integrand. At the intersection, the new integral is solved by point-sampling the integral again.
+The ray bounces to build a _path_, the light carried along each path provides one evaluation the integrand: this procedure is called _path tracing_.
+
+Path tracing can render mirror-like, glossy or diffuse material, soft shadows,
+transparent objects along with caustic effects.
+It can handle fog and subsurface scattering if extended to sample points in volumes.
+
+Downside is computational complexity, and _high variance_ (close points could have vastly different lighting) which manifests as noise.
+_importance sampling_ can be used to mitigate this effect without additional paths.
+
+
+11.3 11.4 are concerned with occlusions (visibility of light sources from shaded points).
+11.5 11.6 are simulating not only occlusion bu also full light bounces.
+
+### 11.3 Ambient Occlusion p446
+
+_Ambient occlusion_ (AO) is a basic global illumination effect developped in early 2000s.
+It inexpensively provides cues about shapes when lightin lacks directional variations
+(e.g. environment lighting).
+
+#### 11.3.1 Ambien Occlusion Theory p446
+
+Surface irradiance is the cosine-weighted integral of incoming radiance, assumed constant here
+$L_i(\mathbf{l}) = L_A$:
+$$
+E(\mathbf{p}, \mathbf{n})
+= \int_{\mathbf{l} \in \Omega}{L_A (\mathbf{n} \cdot \mathbf{l})^+ d\mathbf{l}}
+= \pi L_A
+\qquad\text{(11.6)}
+$$
+
+For Lambertian surfaces, outgoing radiance $L_o$ is proportional to surface irradiance $E$.
+From (11.6), it results that $L_o$ is constant under constant uniform illumination,
+as it does not depend from location $\mathbf{p}$ or normal $\mathbf{n}$.
+It leads to a flat appearance.
+
+It can be extended with visibility $v(\mathbf{p}, \mathbf{l})$ that equals $0$ if a ray cast from $\mathbf{p}$ in direction of $\mathbf{l}$ is blocked, $1$ otherwise:
+$$
+E(\mathbf{p}, \mathbf{n})
+= L_A \int_{\mathbf{l} \in \Omega}{v(\mathbf{p}, \mathbf{l}) (\mathbf{n} \cdot \mathbf{l})^+ d\mathbf{l}}
+\qquad\text{(11.7)}
+$$
+
+Ambient occlusion $k_A(\mathbf{p})$ is the cosine-weighted integral of the visibility function,
+a cosine-weighted percentage of the unoccluded hemisphere:
+$$
+k_A(\mathbf{p})
+= \frac{1}{\pi} \int_{\mathbf{l} \in \Omega}{v(\mathbf{p}, \mathbf{l}) (\mathbf{n} \cdot \mathbf{l})^+ d\mathbf{l}}
+\qquad\text{(11.8)}
+$$
+
+Giving:
+$$
+E(\mathbf{p}, \mathbf{n}) = k_A(\mathbf{p}) \pi L_A \qquad\text{(11.9)}
+$$
+
+This way, irradiance changes with surface location $\mathbf{p}$.
+
+The _bent normal_ is the cosine-weighted average unoccluded direction:
+$$
+n_{bent} =
+\frac
+    {\int_{\mathbf{l} \in \Omega}{\mathbf{l} v(\mathbf{l}) (\mathbf{n} \cdot \mathbf{l})^+ d\mathbf{l}}}
+    {|| \int_{\mathbf{l} \in \Omega}{\mathbf{l} v(\mathbf{l}) (\mathbf{n} \cdot \mathbf{l})^+ d\mathbf{l}} ||}
+\qquad\text{(11.10)}
+$$
+
+#### 11.3.2 Visibility and Obscurance p449
+
+_Obscurance_ modifies the ambient occlusion computation, to replace
+visibility function $v(\mathbf{l})$
+with a continuous distance mapping function $\rho(\mathbf{l})$ (valued $1$ above $d_{\text{max}}$):
+$$
+k_A(\mathbf{p})
+= \frac{1}{\pi}
+\int_{\mathbf{l} \in \Omega}{\rho(\mathbf{l}) (\mathbf{n} \cdot \mathbf{l})^+ d\mathbf{l}}
+\qquad\text{(11.11)}
+$$
+
+
+#### 11.3.3 Accounting for interreflections p450
+
+Reasoning to assume that $L_i$ from blocked directions is equal to $L_o$ of currently shaded point,
+to obtain a new factor $k'_A$:
+$$
+k'_A = \frac{k_A}{1 - \rho_{ss}(1 - k_A)}
+\qquad\text{(11.13)}
+$$
+
+#### 11.3.4 Precomputed Ambient Occlusion p451
+
+The process of precomputing any lighting-related information is often called _baking_.
+
+_Malley's method_ use importance sampling, casting a cosine-weighted distribution of ray, to compute AO.
+
+Pointers to precompute data to model AO effects of objects on each other p452.
+Pointers to use AO in indirect illumination solutions p453.
+
+Note: AO decouples visibility calculations from lighting (so, usable with dynamic lighting).
+
+#### 11.3.5 Dynamic Computation of Ambient Occlusion p453
+
+Provide better results for dynamic scenes. Two groups of methos:
+* Object space
+  * Disk at vertices, SDF, _cone tracing_ p455, collection of spheres with SH p456
+    * SH methods producing high-order coefficients augment AO with directional occlusion info
+* Screen space
+
+#### 11.3.6 Screen-Space Methods p457
+
+_Screen-space ambient occlusion_ (SSAO) is a dynamic method developed by Crytek compute AO in a full-screen pass using
+z-buffer only.
+Also points at other methods with ad-hoc heuristics.
+
+SSAO could be interpreted as Monte Carlo integration, calculating the _volumetric obscurance_ $v_A$ p459 (11.15).
+
+It can be augmented with normal buffer, e.g. _volumetric ambient occlusion_ p459.
+
+_Horizon-base ambient occlusion_ (HBAO) estimate visibility by determining _horizon angles_.
+_Ground-truth ambient occlusion_ (GTAO) is an horizon-based approach aiming to match results from ray tracing.
+
+To limit the required number of samples, screen-space methods employ some form of spatial-dithering
+(TODO: define in this context.),
+such as using slightly different set of samples, followed by full-screen joint bilateral filtering.
+Calculations can also be supersampled over time, requiring previous data to be reprojected to current view.
+
+#### 11.3.7 Shading with Ambient Occlusion p463
+
+Apply AO to more complex lighting scenarios, lifting the limitation to constant illumination.
+Demonstration to arrive at:
+$$
+L_o =
+k_A \rho_{ss} \int_{\mathbf{l} \in \Omega}{L_i(\mathbf{l}) K(\mathbf{n}, \mathbf{l})d\mathbf{l}}
+\qquad\text{(11.22)}
+$$
+
+With:
+$$
+K(\mathbf{n}, \mathbf{l}) =
+\frac
+{v(\mathbf{l}) (\mathbf{n} \cdot \mathbf{l})^+}
+{\int_{\mathbf{l} \in \Omega}{v(\mathbf{l}) (\mathbf{n} \cdot \mathbf{l})^+} d\mathbf{l}}
+\qquad\text{(11.23)}
+$$
+
+(11.22) can be thought as applying filter $K$ to incoming radiance $L_i$.
+
+On appraoch it to approximate $K$ with a simpler filter, such as the _normalized cosine kernel_ $H$:
+$$
+H(\mathbf{n}, \mathbf{l}) =
+\frac
+{(\mathbf{n} \cdot \mathbf{l})^+}
+{\int_{\mathbf{l} \in \Omega}{(\mathbf{n} \cdot \mathbf{l})^+} d\mathbf{l}}
+\qquad\text{(11.24)}
+$$
+
+This approximation gives:
+$$
+L_o =
+\frac{k_A}{\pi} \rho_{ss} E \qquad\text{(11.25)}
+$$
+
+This means that, in this simple form, shading with AO can by performed by computing irradiance
+(e.g. irradiance env map) and multiplying it by AO value $k_A$.
+
+Note: Ignoring visibility, as in (11.25), is a significant approximation.
+This approximation highlights why AO is not a good choice for modeling visibility of highly
+directional lights (it entirely remove light visibility from the equation).
+
+Also, we assumed Lambertian surfaces, as a more complex non-constant BRDF cannot be pulled out of the integral.
+So AO makes most sense for diffuse BRDFs.
+
+Using the bent normal make for a better approximation of (11.23), p 467.
+
+### 11.4 Directional Occlusion p467
+
+AO is a poor approximation for visibility for lights with more directionality (area light, punctual, ...) or complexity (e.g. strong gradient), and cannot correctly deal with glossy BRDFs.
+
+This section will focus on methods that the entire spherical or hemispherical visibility.
+Meant to be used mainly for occlusion of large area light or environment lighting,
+where generated shadow are soft (and artifacts caused by approximated visibility are not noticeable).
+Alternatively, can provide occlusion when regular shadowing techniques are not feasible
+(self-shadowing bump-map, extremely large scene).
+
+#### 11.4.1 Precomputed Directional Occlusion p 466
+
+_ambient aperture lighting_ models the set of unoccluded 3D directions as a whole as an circular aperture.
+(Other methods could use elliptical aperture).
+
+Possibility to use _spherical signed distance function_ (SSDF) to represent visibility.
+Or any spherical/hemispherical base can encode visibility.
+
+As with AO, directional visibility information can be stored in textures, mesh vertices, or volumes.
+
+#### 11.4.2 Dynamic Computation of Directional Occlusion p467
+
+Note: Using more bands in SH allow encoding visibility with more precision.
+
+Many methods used in AO can be used to generate directional visibility information.
+Cone tracing can be restricted to one direction.
+Also screen-space methods, e.g. _screen-space bent cones_.
+
+#### 11.4.3 Shading with Directional Occlusion p468
+
+Visibility function is $0$ when light:
+* falls under the horizon (horizon mapping)
+* falls outside the visibility cone (ambient aperture lighting)
+* falls in the negative area of the SSDF
+
+Distinct approximations and restrictions, offering trade-offs between generality, runtime cost and
+quality.
+
+Present reasoning for punctual lights p468,
+extend to area-lights p468 (visibility is $0$ except in a solid angle subtended by the light),
+assuming Lambertian surface (i.e. constant BRDF).
+
+Move onto environment lighting (remove restriction on solid angle), still Lambertian p470 \
+Introduce _zonal harmonics_ (ZH), a subset of SH for which a single coefficient per band is non-zero.
+The cosine $\mathbf{n} \cdot \mathbf{l}$ projects to ZH.\
+Precomputing $\bar{v(\mathbf{l})} = v(\mathbf{l})(\mathbf{n} \cdot \mathbf{l})^+$ is a form of _precomputed radiance transfer_. It prevents fine-scale modification of the normal.
+
+Then onto glossy BRDFs (not constant), with or without dependence on view angle p471. \
+Can approximate the BRDF with a set of _spherical Gaussians_, representable by:
+* direction (or mean) $d$, standard deviation $\mu$, amplitude $w$.
+
+### 11.5 Diffuse Global Illumination
+
+Cover simulating full light bounce in real time, last bounce of a diffuse surface, i.e light path:
+$L(D|S)*DE$.
+Assume lighting changes smoothly (or is constant) on hemisphere above shaded point.
+
+#### 11.5.1 Surface Prelighting p473
+
+Precompute the results of expensive computation for _static_ objects,
+as baking prevents changing geometry, lights or materials.
+_Dynamic_ objects act only as receivers (they neither occlude light nor generate indirect illumination): their effect is either ignored or modeled with other techniques (e.g. screen-space occlusion).
+
+Simplest lighting info to precompute is irradiance.
+Light source independence allows to add dynamic lights on top of precomputed irradiance.
+Exitance is irradiance times diffuse color.
+Since diffuse color is high-frequency but repeatable, while irradiance is low-frequency but unique,
+it is better to store them separated.
+
+TODO: why irradiance can only be precomputed for flat-surfaces?
+What prevents a statically known but spatially varying normal?
+
+#### 11.5.2 Directional Surface Prelighting p475
+
+Prelighting together with normal mapping on Lambertian surfaces.
+Also coverage of dynamic geometry.
+
+General method is storing full spherical irradiance, e.g. in SH
+* 3rd order (9 coeff) give excellent results but storage & bandwith costs are high.
+* 2n order (4 coeff) is less costly, but the quality is visibly degraded.
+Present variations, both for lower cost or high quality.
+
+TODO: For a high quality approach also usable for low-gloss specular BRDF see:
+Pettineo, Matt, “SG Series Part 6: Step into the Baking Lab,” The Danger Zone blog, Oct. 9, 2016.
+
+#### 11.5.3 Precomputed Transfer p 478
+
+Precomputed lighting is inherently static.
+It is possible to precompute how light interacts with (static) models and allow light to change
+(at runtime cost).
+
+Function that take incoming lighting and return a descrption of the radiance distribution
+throughout the scene is called _transfer function_.
+Solutions that precompute this are called _precomputed transfer_ or _precomputed radiance transfer_ (PRT).
+
+##### Techniques to precompute transfer from a number of elements then used to model the lights
+
+e.g. Precompute how the scene respond to light distribution represented by SH basis functions.
+Then project a dynamic environment lighting to those SH bands. p480.
+
+Discussion of applying _principal component analysis_ (PCA) p480.
+
+Applying to indoor lighting with clustered static lights then interpolated for the dynamic lighting
+p481.
+
+##### Techniques to precompute transfer between surfaces p482
+
+TODO: understand
+
+The actual source of illumination becomes irrelevant.
+Seems to imply we do direct-illumination calculations on "source" elements. TODO: How?
+There is also a set of "receiver" elements.
+The preprocessing step computs how light is transferred between sources and receivers.
+
+> The outgoing radiance for all source elemnts is provided to the system. TODO: How?
+
+Draws from _progressive radiosity_ as it computes one light bounce at a time
+(and does not solve a system of linear equations, unlike radiosity).
+The process of transferring radiance to the receiving location is called _gathering_.
+
+
+
+#### 11.5.4 Storage Methods p484
+
+Note: those methods can also be used to store ambient and directional occlusion, as they share
+many spatial characteristics of diffuse lighting. p491
+
+When values are filtered on the GPU, care must be taken to obtain valid values (e.g. renormalize).
+
+_light maps_ collectively describe all textures that store precomputed lighting information.
+More specific terms might be used to denote the specific type of data, such as _irradiance map_.
+
+Mipmapping usually not needed (a lightmap texel covering a large area of geometry).
+Since lightmap texels are not reused, mapping require an _unique parameterization_.
+
+_charts_ or _shells_ are the chunks of mesh in texture space.
+Charts filtering footprints must stay separate to avoid bleeding.
+_grid-preserving parameterization_ can be used to create ligtmaps free from seam artifacts.
+
+Storing precomputed lighting on vertices is rarely used p487.
+
+(alternative to light maps) _Irradiance volumes_ represent 5-dimensional irradiance function
+with sparse spatial sampling of irradiance env maps:
+it store 2 directional irradiance env map (directional) (TODO: the envmap are also called probes?)
+on a 3-dimensional (spatial) grid in space.
+Irradiance function at sample points are commonly: SH, spherical Gaussians, ambient cube, ambient dice.
+Dynamic objects can interpolate irradiance values from closest maps.
+Static surfaces can also be lit by irradiance volumes, avoiding the need for parameterization of the light map.
+
+The volumetric structure that holds lighting can be irregular. e.g. Delaunay tetrahedralization p 489.
+
+The position for which lighting gets stored are referred as _lighting probes_
+(also, _light probes_, to distinguish from "light probes": the distant lighting recorded in an envmap).
+
+Note: algorithm to traverse a tetrahedral mesh to find the tetrahedron for a given absolute position p490, figure 11.31
+
+It is common to use different lighting storage for static (e.g light maps)
+vs dynamic (e.g. volumetric structures) p490.
+
+#### 11.5.5 Dynamic Diffuse Global Illumination p491
+
+Note: In many case, a single bounce is enought to create believable results.
+
+"Instant Radiosity" place _virtual point lights_ (VPLs), and inspired _reflective shadow maps_ (RSM):
+The map store more information about surfaces than depth: albedo, normal, direct illumination (flux).
+Can be optimized by creating some lights from the RSM and splatting them in screen space.
+Main drawback: no occlusion for indirect illumination.
+
+#### 11.5.6 Light Propagation Volumes p493
+
+_Light Propagation Volumes_ (LPV) is inspired from _discrete ordinate methods_ from radiative transfer theory.
+It discretizes the scene into a regular grid of 3D cells, and incrementally propagate the directional
+distribtion of radiance flowing through them.
+Important advantage: geneates a full radiance field for each cell.
+
+There is a _cascaded_ variant. It is possobile to accout for occlusion of indirect lighting.
+
+Suffer from bleeding, commong to volumetric approaches. And also aliasing.
+
+#### 11.5.7 Voxel-Based Methods p494
+
+_Voxel cone tracing global illumination_ (VXGI) store the geometry in a _sparse voxel tree_,
+voxels also contain information of light reflected off their geometry.
+Then, bundles of rays are approximated by cone tracing.
+The number of cones traced must be balanced with rendering budget
+(usually require spatial distribution & filtering).
+
+Sparse octree can stall warps on memory latency (high number of dependent reads, little logic work)
+Can be mitigated using cascaded 3D texture (no dependent reads).
+
+
+#### 11.5.8 Screen-Space Methods p496
+
+Screen-space methods for diffuse GI are not as popular as SSAO: artifacts are pronunced
+(missing information, result highly dependent on viewpoint).
+Can nonetheless be used to augment some other solution (e.g. irradiance volumes) at fine scale.
+
+
+### 11.6 Specular Global Illumination - p497
+
+Cover simulating full light bounce in real time, last bounce of a specular surface, i.e light path:
+$L(D|S)*SE$.
+Assume lighting has high rate of change accross incident directions.
+
+Unlike diffuse GI, those methods that can render view-dependent effects.
+For glossy material, specular lobes are much tighter:
+radiance representation should deliver high-frequency details,
+and the reflectance equation only need lighthing incident from a limited solid angle
+(where Lambiertian BRDF reflect illumination from entire hemisphere).
+
+Method storing incident radiance can deliver crude view-dependent effects.
+Artifacts can be reduced by representing lighting with higher precision
+e.g. p498 9 to 12 Gaussian lobes can model moderately glossy materials.
+
+#### 11.6.1 Localized Environment Maps p498
+
+Previous methods could not render polished materials, since the radiance field is too coarse.
+
+The most popular solution to deliver specular component for GI in real-time:
+_localized environment maps_ p498 trade spatial precision for angular precision.
+It relies on sparsely distributed _refelection probes_:
+_environment maps_ (EM) rendered at specific points in the scene.
+
+Note: perfect reflections are specular indirect illuminations.
+
+Results diverge from reality as rendered specular-surface location gets further from EM center.
+_parallax correction_ mitigate the problem: simple shapes, _reflexion proxies_, approximate
+the environment geometry, and allow to find a much better reflection direction $r'$ to index the EM.
+
+Popular because of many advantages:
+* Easy to implement, compatible with both forwared and deferred rendering schemes
+* Fast at runtime
+* Give direct artistic control over the look and memory usage (via density, placement, surface affinity, blending)
+* Glossy materials can index mip levels of a prefiltered EM depending on roughness and distance to proxy shape.
+
+Drawbacks:
+* Proxy shapes mismatch make reflections stretch in unnatural ways
+* Reflective objects rendered **into** the EM have their specular BRDF evaluated from the EM location,
+  which diverge from the surface location accessing the EM, so the view of reflected object is not correct.
+* Light leaks, as simplified ray cast misses local occluding geometry. Can be mitigated:
+  * directional occlusion methods (section 11.4)
+  * use diffuse lighting higher spatial resolution:
+    divide the EM value by the average diffuse lighting at the position the EM is rendered,
+    multiply by diffuse lighting at shaded location p502.
+
+Extensions use more sophisticated representation of geometry captured by reflection probles (e.g. depth).
+
+#### 11.6.2 Dynamic Update of Environment Maps - p502
+
+Possiblity to update probes at low frequency (they should react to time of day), while approximating
+reflections of dynamic geometry (e.g. screen-space methods).
+If dynamic are rendred in probes, heuristics can still be used for lower frequency.
+
+Optimizations for filtering and BC6H compression p503.
+
+An optimization to avoid expensive scene submission is offline rendering of a G-buffer of the static geometry
+(then optionally render dynamic objects on top at runtime),
+and use it to render the cubemap faces.
+
+#### 11.6.3 Voxel-Based Methods
+
+Offer much better spatial precision than localized EMs but require more performance.
+
+Voxel cone tracing (section 11.57) is less expensive for specular case,
+because a single cone is usually enough for glossy materials
+(fallback to localized reflection for specular contribution on rougher materials).
+For very narrow BRDF, if voxelized cubes become apparent, other methods can provide
+perfect mirror reflections at lower runtime cost.
+
+#### 11.6.4 Planar Reflections p504
+
+Restricted to planes, but work for glossy (with filtering) as well as perfect mirrors
+Can be achieved by simple modification of the projection matrix, and a programmed clipping plane p505.
+
+#### 11.6.5 Screen-Space methods - p505
+
+Slightly more precise than the diffuse case, the family of methods is called _screen-space reflections_ (SSR).
+
+Overal idea is to find intersection of reflected ray with geometry in z-buffer, and assume Lambertian
+geometry on hit.
+
+_digital differential analyzer_ (DDA) is an algorithm to interpolate variables between start and end point.
+
+Basic form use a single ray to profile only mirror reflections, but SSR can also render glossy reflections.
+E.g. importance sampling shooting rays stochastically p507, reuse, filtering spatially and temporally.
+Sampling can be optimized using a _hierarchical depth buffer_.
+
+TODO: understand why info about the thickness of objects in depth buffer would be useful p509
+
+SSR is great to provide some effects (e.g. local reflection of nearby objects on mostly flat surfaces), but are not a complete solution.
+Different methods should be stacked, e.g.:
+* SSR as first layer
+* localized reflections probes as fallback
+  * global default probe for areas whithout local probes
+
+## 11.7 Unified Approaches p509
+
+A saying of graphics community: "Ray tracing is the technology of the future and it always will be!".
+It implies that there will always be more efficient ways to handle particular parts of the rendering
+pipelines (e.g. primary visibility).
+
+A more reasonable / less pure approach is to use path-tracing for effects difficult with rasterization.
+e.g.:
+* Trace paths for reflexion instead of approximate reflection proxies / incomplete scree-space info.
+* Trace rays toward area lights to compute occlusion instead of shadows with ad hoc blurs.
+
+Real-time rendering has always been about compromises (such as composition of methods).
+
+A ray tracing system relies on acceleration cheme such as _bounding volume hierarchy_ (BVH) to
+accelerate visibility testing.
+Generated results have to be treated with denoising algorithms.
+
+---
+
+how to shadow area lights (where penumbra becomes very important, and function of the area)
+
+ambient occlusion should be applied to all diffuse indirect lighting (e.g. env irradiance)
+e.g. 11.25
+It might be even better to use ambient obscurance.
+
+Better structure mental representation of diffuse(lambertian) vs specular("glossy") materials:
+* Diffuse:
+  * View independent
+  * Lambertian BRDF reflects illumination from the entire hemisphere
+    * is interested in irradiance
+* Specualr:
+  * View dependent
+  * the evaluation of the reflectance equation needs only lighting incident from a limited solid angle.
+    * input is usually radiance
+
+Spatial dithering, look-up "Floyd–Steinberg Dithering".
