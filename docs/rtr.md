@@ -4,6 +4,8 @@
 
 * What is _photon mapping_?
 
+* A strict definition of _alpha blending_?
+
 * List all of the physical light/matter interaction: scattering, absorption, emission.
 
 * Seems that the book divides specular reflections between mirror reflections (perfect, BRDF is a single ray?)
@@ -16,15 +18,15 @@ and glossy reflections (with a roughness > 0).
   * diffuse illumination (independent of viewing angle: uniform appearance of light accross the surface, intensity of scaterred light primarly depends on angle of incidence: I suppose that is why it care about irradiance, all incoming lights will contribute, modulated by cos, to any viewing direction)
   * specular illumination (create highlights, strongly view dependent: intensity is strongest along specular direction determined by the incident angle and surface normal. It cares about radiance: only the limited set of incoming directions resulting in a specular component along viewing direction are of interest.)
 
-| Feature                     | Specular Reflection                       | Diffuse Reflection                      |
-|-----------------------------|-------------------------------------------|-----------------------------------------|
+| Feature                      | Specular Reflection                      | Diffuse Reflection                      |
+|------------------------------|------------------------------------------|-----------------------------------------|
 | **Surface Quality**          | Smooth surfaces                          | Rough surfaces                          |
 | **Reflection Directionality**| Light is reflected in a single direction | Light is scattered in all directions    |
 | **Dependence on View Angle** | Highly dependent                         | Largely independent                     |
 | **Example Surfaces**         | Polished metal, glass, water             | Matte paint, paper, unpolished wood     |
 
 
-
+* Note: Fundamentally, gathering is more amenable to fragment-shader parallelism compared to scattering. (parallel reads, unique write, vs parallel writes, unique read).
 
 
 
@@ -2110,6 +2112,198 @@ Real-time rendering has always been about compromises (such as composition of me
 A ray tracing system relies on acceleration cheme such as _bounding volume hierarchy_ (BVH) to
 accelerate visibility testing.
 Generated results have to be treated with denoising algorithms.
+
+
+## Chapter 12 - Image-Space Effects p513
+
+Discusses _image processing_ techiques: modifying a (rendered) image.
+TODO: Define _Reprojection_ methods
+Conclude with sample-based techniques:
+
+### 12.1 Image Procession p513
+
+_Image processing_ techiques: modifying a (rendered) image.
+Instead of creating artificial scenes from geometry + shading descriptions, its input is an image.
+
+_Post-processing_: modifying the image after rendering.
+
+GPU can be used thanks to programmable shaders and ability to use output image as texture: the
+image(s) are treated as texture applied to a screen-filling quadrilateral.
+In practice, a screen-filling triangle (with doubled UV at vertices) might be more efficient (cache-coherency).
+The fragment shader is invoked at each pixel on the "screen": this type of rendering is
+called a _full screen pass_.\
+Alternatively, compute shaders can be used.
+
+Relevant neighboring samples are retrived, weighted, summed.
+_Rotation-invariant filter kernel_: weights are not dependent on the radial angle
+(i.e. entirely described by distance)
+
+e.g. Gaussian filter (bell curve):
+$\text{Gaussian}(x) = \left( \frac{1}{\sigma \sqrt{2\pi}} \right) e^{-\frac{r^2}{2\sigma^2}}$:
+* $r$: distance from texel's center
+* $\sigma$: standard deviation (fr: écart type): larger -> wider bell curve. $\sigma^2$ is called the variance.
+  * variance: average of the squared deviation from the mean.
+  * standard deviation: square-root of the variance,
+    so the Root-Mean-Square (fr: moyenne quadratique) of the deviation from the mean.
+* Rule of thumb: make the _support_ (filter size) $3\sigma$ pixels wide (or greater).
+
+Texel accesses can be minimized leveraging the GPU interpolation and mipmapping hardware.
+
+_Separable_ filtering kernels: can be applied in 2 separate 1-dimensional blurs.
+With kernel diameter $d$, sampling cost goes from $d^2$ to (amorticized?) $2d$.
+
+Circular disk filter (used for bokeh) are not separable in the domain of real number.
+Complex numbers offers a wide family of separable functions (p518, Wronski).
+
+Compute shaders have better performance for lager kernels.
+
+Downsampling is common. Gives a boost in kernel support:
+* downsampled texels cover more surface compared to original texel
+* blending into the fill resolution image, magnification can use bilinear interpomation, with further blurring effect.
+
+#### 12.1.1 Bilateral Filtering p 518
+
+_Bilateral filter_: lower (or discard) influence of samples that appear unrelated to the surface of center sample.
+Weights depend not only on Euclidean distance of pixel, but also on radiometric differences (e.g. color intensity, depth, normals, identification, velocity).
+
+_edge-preserving filters_ limit samples crossing shared edges (usually require normals in addition to depth).
+
+TODO: _joint_, or _cross_, bilateral filter.
+
+Can reduce variability in an area, called _denoising_.
+
+Make optimizations such as two-pass separable filtering and bilinear interpolation of samples difficult,
+but there are approximations p520.
+
+_ping-pong buffers_: apply operation between 2 offscreen buffers, in turn (they are transient).
+Common to implement a post-processing pipeline.
+
+Examples and references of post-processing effects, p521.
+
+### 12.2 Reprojection Techniques p522
+
+_Reprojection_ is reusing samples computed in previous frames (from a new viewing pose).
+It exploits temporal coherence.
+
+* _Reverse reprojection_: A time $t$, vertex positions are computed for current $t$ and previous $t-1$ frames.
+$\frac{z}{w}$ is interpolated at each fragment for both times, if they are close enough a bilinear lookup
+is done in previous color buffer. Areas occluded at $t-1$ can lead to a _cache miss_.
+  * It _gathers_ values from $t-1$ to $t$
+  * Refresh have to be mades p523
+  * Using a _running-average filter_ to gradually phase out old values can enhance quality.
+* _Forward reprojection_ starts from pixels of frame $t-1$ and projects them into frame $t$.
+  It avoids double vertex shading.
+  * It _scatters_ pixels from $t-1$ onto $t$
+  * Differents uses, such as depth-of-filed, stereo pair generation, temporal upsampling p523.
+
+Interpolation methods between two frames have great chances to handle occlusion and can increase framerate p523.
+
+### 12.3 Lense Flare and Bloom p524
+
+_Lens flare_: phenomenon caused by light traverling through a lens system via unintended paths (e.g. indirect reflection).
+Mostly classified between:
+* Halo: circular ring around the light, outside edge tinged with red, inside with violet.
+  * Due to lens materials refracting lights differently depending on wavelength.
+  * Constant apparent size (independent of the source distance).
+* Ciliary corona: rays radiating from a point, can extend beyond the alo.
+  Due to density fluctations in the lens.
+Camera lenses can create secondary effects:
+* Polygonal patterns, due to camera's aperture blades.
+* Streak of light accross glass, due to small groves
+* Bloom, caused by scattering in lens, overflow of satured capture sites in a _charge-coupled device_ (CCD).
+
+_Glare effects_ is the class of halos, coronae and bloom.
+
+Are now routinely added to real-photo in digital post processing,
+and can give the impression of increased brightness.
+
+Implementations directions for lens flare p524, streak p525
+
+Bloom effect implementations p527. Common method is a _bright-pass filter_, downsampling, blurring,
+then compositing with original.
+
+### 12.4 Depth of Field p527
+
+_Depth of field_: range where objects are in focus for a specific camera lens setting.
+(photography: aperture size and focal length).
+Objects are less than half a pixel out of focus.
+In computer graphics, depth of field refers to the effect of blurring near and far field content.
+
+Can be simulated via an accumulation buffer (slightly moving viewer position keeping direction at focal point).
+Costly but converges to ground truth.
+
+Surfaces in the scene can be classified into 3 zones:
+* _focus field_, or _mid--field_: in focus, near focal point's distance
+* _far field_: beyond focal point
+* _near field_: closer
+
+_2.5-dimensional approach_: give depth to 2D images and combine them.
+
+_circle of confusion_: on the pixel grid, the circle filled by an out-of-focus dot from the scene.
+
+_Bokeh_ (en: blur): In photography, the aesthetic quality of areas outside the focus field.
+The shape of the area of confusion relates to the shape of the aperture.
+Sometimes incorrectly used to describe bright aread showing aperture shape.
+
+Note: night shots have a larger aperture size, can have more circular patterns (WHY?)
+
+_Forward mapping_ can be a method where each pixel is rendered as a sprite
+(of size determined by the circle of confusion radius).
+
+_Backward mapping_, or _reverse mapping_ gather, blurring the surface at each pixel based on its depth.
+
+Method by Bukowski et al. [209, 1178] p532:
+generate a buffer with circle of confusion radius at each fragment,
+separate initial image between near fields and the rest (to blur near edges),
+downsample and blurred (separable filter), compose (using radii to weight initial image vs far-blurred).
+
+Another method uses an approach also used for motion blur p534,
+can be implemented by "scatter as you gather". (TODO: understand this naming)
+
+"Bokeh" (the bright shapes) can be rendered as sprite (scatter) of aperture shape
+for detected bright areas (light source, specular reflections).
+
+[764] use compute shaders for blurring and bokeh.
+
+### 12.5 Motion Blur p536
+
+In movie, _motion blur_ comes from objects movements relative to the camera for the time shutter is open
+(1/40 to 1/60 of a second).
+1/500 of a second can give hyperkinetic effect (TODO: define).
+
+Rapidly moving objects can appear jerky if they "jump" by many pixels between frames:
+this can be thought of **temporal** aliasing, and motion blur as anti-aliasing in the time domain.
+
+Accumulation method can create motion blur: render the image at several time-points during shutter-open period.
+Subject to ghosting artifacts for rapidly moving objects.
+Stochastic rasterization (TODO: define) can produce noise instead of ghosting.
+
+A sliding accumulation window can give high blur at the cost of rendering twich each frame (p537).
+
+Different sources of motion blurs can be categorized as (increasing order of complexity):
+* camera orientation changes
+  * Can be adressed by _line integral convolution_ (LIC): sample each pixel along a direction, speed determine filter width.
+* camera position changes
+  * Due to parallax, distant objects move less rapidly so blur less
+  * If moving along the view axis, radial blur may be sufficient
+  * _pan_, in computer graphics (not cinematography) is moving sideways while looking forward.
+* object position changes
+  * One can model and render the blur (e.g draw particles as line segments, deform surfaces, ...)
+    * Replaced by less ad-hoc approaches.
+* object orientation changes
+
+_velocity buffer_ p 540 (TODO: describe how to produce it)
+
+Description of a tiled appraoch to find maxima (p540)
+
+Concept to combine motion blur and DOF, combining velocity buffer and circle of confusion to obtain
+a unified blurring kernel p542
+
+Discussion of the specificity of video-game experience:
+* It might be good to disable camera rotation blur for FPS (might make people motion sick)
+* Art direction might control what is motion blurred independently of the virtual camera.
+  E.g. if it is assumed the player will eye-track an object entering the screen, it might
+  be kept in focus and the static background blurred.
 
 ---
 
