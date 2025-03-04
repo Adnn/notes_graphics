@@ -391,10 +391,12 @@ Some parameters are shared by most commands:
   - `Array`: fetches in contiguous sequence from enabled vertex arrays.
   - `Elements`: fetches from enabled vertex arrays at indices provided by the buffer bound to `GL_ELEMENT_ARRAY_BUFFER`.
     Parameter `type` indicates the integral type of the value in the element array buffer.
-  - In both cases, the index of the current array element may be read by a VS via `gl_VertexID`.
+  - In both cases, the index of the current array element may be read by a VS via `gl_VertexID`, **including** `BaseVertex`.
 - `Multi`: is equivalent to issuing parameter `drawcount` draw commands at once, parameters becoming pointers into arrays of `drawcount` elements.
-  VS can read the index of the draw via `gl_DrawID`.
-- `BaseVertex`: the value of `GLint` parameter `basevertex` is added to the indices read from the element array buffer **before** pulling the vertex data. It allows to load vertices for distinct models in the same `GL_ARRAY_BUFFER` without requiring to re-index subsequent models. (Note: this is only available for `Element` variant, because `Array` already takes a `first` parameter).
+  - VS can read the index of the draw via `gl_DrawID`.
+- `BaseVertex`: the value of `GLint` parameter `basevertex` is added to the indices read from the element array buffer **before** pulling the vertex data. It allows to load vertices for distinct models in the same `GL_ARRAY_BUFFER` without requiring to re-index subsequent models.
+(Note: this is only available for `Element` variant which accesses an _element buffer_. `Array` variant does not fetch indices from a buffer, but provides `first` parameter to specify starting index in arrays).
+  - `gl_BaseVertex` built-in give shader access to this parameter.
 - `Count`: `drawcount` is now a byte offset into the (server space) buffer bound to `GL_PARAMETER_BUFFER`, where a single `GLsizei` value is read to provide the actual draw count.
 - [`Indirect`](#draw_indirect): read some of the draw parameters from server space memory, from the buffer bound to `GL_DRAW_INDIRECT_BUFFER`, offset by parameter `indirect` bytes.
 
@@ -405,8 +407,9 @@ Some parameters are shared by most commands:
 
 - `Instanced`: the sequence of vertices will be drawn parameter `instance` times.
   Instanced vertex attribute array ([non-zero `divisor`](#divisor)) will advance by one every `divisor` instances.
-  VS may read the current instance index via `gl_InstanceID`.
+  VS may read the current instance index via `gl_InstanceID` (**not** including `BaseInstance` offset).
 - `BaseInstance`: parameter `baseinstance` specifies the first element within instanced vertex attributes (i.e. an index offset).
+  - `gl_BaseInstance` built-in give shader access to this parameter.
 
 #### <a name="draw_indirect"/> Indirect
 
