@@ -1,1 +1,1 @@
-[{{include.url}}]({{include.url}}){% if {{include.v}} %} _(consulted {{include.v}})_{% endif %}
+[{{include.title}}]({{include.url}}){% if {{include.v}} %} _(consulted {{include.v}})_{% endif %}
