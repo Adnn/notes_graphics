@@ -304,6 +304,27 @@ GL has 2 active _framebuffers_:
 
 The separation between _Draw_ and _Read_ framebuffers exists so the Read frambebuffer can be blitted to the Draw framebuffer.
 
+#### Attachment
+
+Framebuffer object has a set of attachment points (`MAX_COLOR_ATTACHMENTS`, + depth, +stencil).
+The color attachment points are named `COLOR_ATTACHMENT0` to `COLOR_ATTACHMENTn`.
+
+The state is the FBO state (spec 23.24) + array of attachment point states (spec 23.25).
+Attachment point state notably defines the attached object _type_ and _name_.
+
+FBO logical buffers are idenfified by attachment point names.
+* A Renderbuffer is attached to a FBO attachment point with `glFramebufferRenderbuffer()`.
+* A level of a texture object is attached as a logical buffer of a FBO with `glFramebufferTexture()`.
+
+#### Shader mapping
+
+Output fragment colors, as defined in fragment shaders,
+are mapped to FBO color attachment with `glDrawBuffers(color_attachments[])`.
+
+The index of the `color_attachment` array correspond to the output fragment color `location`
+(e.g. `layout(location = 1) out colorBis;`),
+the value at this index is the FBO's color attachment mapped to this location.
+
 #### Buffers
 
 * Color buffers can have up to 4 color components (RGBA) per pixel.
@@ -316,6 +337,9 @@ The separation between _Draw_ and _Read_ framebuffers exists so the Read frambeb
 **Renderbuffer** objects contain images, intended to be used with _Framebuffer Objects_.
 Unlike textures, they are optimized for use as _render targets_ (i.e. when there is no need to sample the image), and natively accomodate _multisampling_.
 
+#### Layered rendering
+
+**TODO** (the GS send specific primitives to different layers of a layered framebuffer)
 
 ## Vertex specification
 
