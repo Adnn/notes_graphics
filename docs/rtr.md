@@ -1540,7 +1540,7 @@ With the following differences from the _reflectance equation_:
 Defining $L_o$ in term of the integration of other $L_o$ makes it a recursive integral.
 
 Important properties of the _rendering equation_:
-* It is _linear_ with respecte to the emitted lighting
+* It is _linear_ with respect to the emitted lighting
   (scaling the light sources scale the result by same factor).
 * The response for each light is independent from all other sources
   (thus each could be computed in isolation).
@@ -1566,7 +1566,8 @@ Note: Categorization can be extended. Defines "glossy" as: shiny but not mirror-
 
 Algorithms are briefly summarized via regular expressions describing what interaction they simulate.
 e.g.:
-* Direct illumination: $L(D|S)E$. If light have a geometry and go directly to the eye: $L(D|S)?E$.
+* Direct illumination: $L(D|S)E$.
+  * If light has a geometry and go directly to the eye: $L(D|S)?E$.
 * Environment mapping: $L(D|(S|D)?S)E$
 * The rendering equation: $L(D|S)*E$.
 
@@ -1576,12 +1577,12 @@ TODO: define _light transport_
 
 ### 11.2 General Global Illumination p441
 
-Algorithms to solve the fulle rendering equation:
+Algorithms to solve the full rendering equation:
 instead of incoming radiance $L_i$ being given, radiance is emitted or reflected from other points.
 
 #### 11.2.1 Radiosity p442
 
-_Radiosity_ was the first CG technique to simulate bouched light between **diffuse** surfaces: $LD*E$.
+_Radiosity_ was the first CG technique to simulate bounced light between **diffuse** surfaces: $LD*E$.
 It can compute interreflections ans soft shadows.
 The name comes from the quantity that is computed by the algorithm.
 
@@ -1595,9 +1596,9 @@ B_i = B^e_i + \rho_{ss} \sum_j{F_{ij} B_j}
 $$
 
 * $B^e_i$ is the radiant _exitance_ of patch $i$ (the radiosity it emits). Non-zero only for light sources.
-* $\rho_{ss}$ is the subsurface albodo.
+* $\rho_{ss}$ is the subsurface albedo.
 * $F_{ij}$ is the _form factor_ between patches $i$ and $j$, a geometric term giving the fraction of
-  uniform diffuse randiant energy leaving patch $i$ that is incident upon patch $j$.
+  uniform diffuse radiant energy leaving patch $i$ that is incident upon patch $j$.
   These fractions add up to $1$:
   (TODO: are patch indices reversed? We copied the book)
   * $$
@@ -1636,7 +1637,7 @@ Shooting rays and evaluating how much light they carry is used to compute the in
 Because of the recursion, for every ray the integral is evaluated again at the intersection. Integrals are evaluated via _Monte Carlo_ methods.
 
 Ray are shot to point-sample the integrand. At the intersection, the new integral is solved by point-sampling the integral again.
-The ray bounces to build a _path_, the light carried along each path provides one evaluation the integrand: this procedure is called _path tracing_.
+The ray bounces to build a _path_, the light carried along each path provides one evaluation of the integrand: this procedure is called _path tracing_.
 
 Path tracing can render mirror-like, glossy or diffuse material, soft shadows,
 transparent objects along with caustic effects.
@@ -1647,7 +1648,7 @@ _importance sampling_ can be used to mitigate this effect without additional pat
 
 
 11.3 11.4 are concerned with occlusions (visibility of light sources from shaded points).
-11.5 11.6 are simulating not only occlusion bu also full light bounces.
+11.5 11.6 are simulating not only occlusion but also full light bounces.
 
 ### 11.3 Ambient Occlusion p446
 
@@ -1655,7 +1656,7 @@ _Ambient occlusion_ (AO) is a basic global illumination effect developped in ear
 It inexpensively provides cues about shapes when lightin lacks directional variations
 (e.g. environment lighting).
 
-#### 11.3.1 Ambien Occlusion Theory p446
+#### 11.3.1 Ambient Occlusion Theory p446
 
 Surface irradiance is the cosine-weighted integral of incoming radiance, assumed constant here
 $L_i(\mathbf{l}) = L_A$:
@@ -1782,7 +1783,7 @@ $$
 
 (11.22) can be thought as applying filter $K$ to incoming radiance $L_i$.
 
-On appraoch it to approximate $K$ with a simpler filter, such as the _normalized cosine kernel_ $H$:
+One approach it to approximate $K$ with a simpler filter, such as the _normalized cosine kernel_ $H$:
 $$
 H(\mathbf{n}, \mathbf{l}) =
 \frac
@@ -1804,7 +1805,7 @@ Note: Ignoring visibility, as in (11.25), is a significant approximation.
 This approximation highlights why AO is not a good choice for modeling visibility of highly
 directional lights (it entirely remove light visibility from the equation).
 
-Also, we assumed Lambertian surfaces, as a more complex non-constant BRDF cannot be pulled out of the integral.
+Also, we assumed Lambertian surfaces, since a more complex non-constant BRDF cannot be pulled out of the integral.
 So AO makes most sense for diffuse BRDFs.
 
 Using the bent normal make for a better approximation of (11.23), p 467.
@@ -1923,7 +1924,7 @@ Seems to imply we do direct-illumination calculations on "source" elements. TODO
 There is also a set of "receiver" elements.
 The preprocessing step computs how light is transferred between sources and receivers.
 
-> The outgoing radiance for all source elemnts is provided to the system. TODO: How?
+> The outgoing radiance for all source elements is provided to the system. TODO: How?
 
 Draws from _progressive radiosity_ as it computes one light bounce at a time
 (and does not solve a system of linear equations, unlike radiosity).
@@ -1952,7 +1953,7 @@ Storing precomputed lighting on vertices is rarely used p487.
 
 (alternative to light maps) _Irradiance volumes_ represent 5-dimensional irradiance function
 with sparse spatial sampling of irradiance env maps:
-it store 2 directional irradiance env map (directional) (TODO: the envmap are also called probes?)
+it store 2-dimensional irradiance env map (directional) (TODO: the envmap are also called probes?)
 on a 3-dimensional (spatial) grid in space.
 Irradiance function at sample points are commonly: SH, spherical Gaussians, ambient cube, ambient dice.
 Dynamic objects can interpolate irradiance values from closest maps.
@@ -2013,7 +2014,7 @@ Cover simulating full light bounce in real time, last bounce of a specular surfa
 $L(D|S)*SE$.
 Assume lighting has high rate of change accross incident directions.
 
-Unlike diffuse GI, those methods that can render view-dependent effects.
+Unlike diffuse GI, those methods can render view-dependent effects.
 For glossy material, specular lobes are much tighter:
 radiance representation should deliver high-frequency details,
 and the reflectance equation only need lighthing incident from a limited solid angle
@@ -2117,7 +2118,7 @@ e.g.:
 
 Real-time rendering has always been about compromises (such as composition of methods).
 
-A ray tracing system relies on acceleration cheme such as _bounding volume hierarchy_ (BVH) to
+A ray tracing system relies on acceleration schemes such as _bounding volume hierarchy_ (BVH) to
 accelerate visibility testing.
 Generated results have to be treated with denoising algorithms.
 
@@ -2555,6 +2556,9 @@ Note: So, cone-tracing can be a method for soft-shadows (even though the surface
 Visualization of implicit surface,
 voxel representation for deep shadow mapping and shadow rays in general.
 Mentions _directed acyclic graph_ for efficient storage.
+
+
+## Chapter 14 - Volumetric and Translucency Rendering p589
 
 
 ---
