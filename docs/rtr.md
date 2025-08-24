@@ -1875,7 +1875,7 @@ _Dynamic_ objects act only as receivers (they neither occlude light nor generate
 
 Simplest lighting info to precompute is irradiance.
 Light source independence allows to add dynamic lights on top of precomputed irradiance.
-Exitance is irradiance times diffuse color.
+_Exitance_ is irradiance times diffuse color.
 Since diffuse color is high-frequency but repeatable, while irradiance is low-frequency but unique,
 it is better to store them separated.
 
@@ -1919,9 +1919,10 @@ p481.
 
 TODO: understand
 
-The actual source of illumination becomes irrelevant.
+The actual source of illumination becomes irrelevant:
+For such methods, the input is the outgoing radiance from a set of surface, not the lights directly.
 Seems to imply we do direct-illumination calculations on "source" elements. TODO: How?
-There is also a set of "receiver" elements.
+There is also a set of "receiver" elements, to wich the "source" elements transfer light.
 The preprocessing step computs how light is transferred between sources and receivers.
 
 > The outgoing radiance for all source elements is provided to the system. TODO: How?
@@ -2560,6 +2561,57 @@ Mentions _directed acyclic graph_ for efficient storage.
 
 ## Chapter 14 - Volumetric and Translucency Rendering p589
 
+## Chapter 15 - Non-Photorealstic Rendering
+
+TODO: take actual notes
+
+### Outline Rendering p654
+
+Different types of edges
+
+Double-draw mesh based approaches (normal, biasing, fattening, shell mapping)
+Image based approaches
+
+Geometric contour edge generate geometry for the edge, thus allowing stylization (procedural effects, textured impostors, ...)
+There are involved solutions, but this is not a solved problem.
+
+Surface stylization can use TAM (tonal art maps) for fills, and modulate the fill density with the diffuse shading term.
+
+Also _graftals_, where geometry or decal textures are added to a surface to produce a particular effect.
+
+TODO: complete notes for chapter 15
+
+##  Chapter 16 - Polygonal Techniques
+
+*Triangulation* is the process of turning a surface into triangles, more generally *tessellation* tiles a surface with polygons.
+* *Consolidation* (authors' term) for the process of merging polygons into a mesh and deriving new data (e.g. normals)
+* *Optimization* reorganize the polygonal data to allow more performant rendering
+* *Simplification* removes features from a mesh, targeting insignificant features in priority.
+* *Compression* minimizes the storage space needed for the various elements comprising a mesh.
+
+
+### 16.1 Sources ouf Three-Dimensional Data p682
+
+Different ways to obtain a polygonal model:
+* Writing the data directly (manually, or via *procedural modeling*).
+* Transforming existing data in other form (e.g. protein data, isosurfaces).
+* Using modeling programs (usually either solid-based or surface-based).
+* *photogrammetry* reconstructs surfaces from 1..N photograph(s) of an object.
+* Sampling a real model (3D scanner, digitizer, ...).
+
+
+### 16.2 Tessellation and Triangulation p683
+
+Note: *Delaunay triangulation* requires that each circle formed by the triangle vertices does not contain other vertices.
+
+*Newell's formula* is a method for computing average normal of warped (non-planar) polygons.
+The section gives pointers to many other methods.
+
+Alternative to general triangulation is partitioning a polygon into convex regions, as convex polygons are easily represented by triangles fans or strips.
+
+There is also a stencil based rasterization approach to render concave polygons.
+
+TODO: take notes from 16.2.1 onward
 
 ---
 
