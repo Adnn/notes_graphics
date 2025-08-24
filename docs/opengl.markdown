@@ -285,14 +285,21 @@ GLSL shader programs can _sample_ the texure via `sampler` uniform variables (wh
 #### Image load/store
 
 **image variables** are GLSL uniform variables allowing arbitrary read/write to/from image within a Texture.
-A given _level_ ("image") in a _texture_ is bound to an _image unit_ (distinct from _texture image unit_) with `glBindImageTexture()`. The uniform value of an `image` GLSL variable (of matching type) is set to the same _image unit_.
+A given _level_ ("image") in a _texture_ is bound to an _image unit_  with `glBindImageTexture()`.
+A GLSL *image uniform variable* (of matching type) is associated to the same _image unit_ in order to access it, with `layout(binding = 1)` qualifier, or calling `glUniform1i()` to set the uniform value.
 
+_Image unit_ is **distinct** from _texture image unit_.
+
+An **image format** describes how images in Textures or Renderbuffer store their data.
+e.g. It is the `internalformat` provided to `glTextStorage*D()`.
+
+*Image uniform variable* have "format qualifier" (e.g. `layout(rgba)`), it **must** match the `format` in `glBindImage()`. It defines how the shader will interpret and convert the bits in the image: it can differ from the **image format**.
 
 ### Framebuffers
 
 A **framebuffer** is a collection of logical buffers (color, depth, stencil) used as destination of rendering operations, or source of readback operations.
 
-_Framebuffer **Objects**_ (_FBOs_) are user-created. Their logical buffers reference individual **framebuffer--attachable images**, either from **textures** (_render to texture_) or from **renderbuffers** (_off-screen_ rendering), attached to a set of **attachment points**.
+_Framebuffer **Objects**_ (_FBOs_) are user-created. Their logical buffers reference individual **framebuffer-attachable images**, either from **textures** (_render to texture_) or from **renderbuffers** (_off-screen_ rendering), attached to a set of **attachment points**.
 An _FBO_ must be **complete** to be used for rendering.
 
 The **default framebuffer** is provided by the system upon _context_ creation.
@@ -302,7 +309,7 @@ GL has 2 active _framebuffers_:
 * **draw framebuffer** (destination for **rendering operations**)
 * **read framebuffer** (source for **readback operations**).
 
-The separation between _Draw_ and _Read_ framebuffers exists so the Read frambebuffer can be blitted to the Draw framebuffer.
+The separation between _Draw_ and _Read_ framebuffers exists so the Read framebuffer can be blitted to the Draw framebuffer.
 
 #### Attachment
 
@@ -339,7 +346,13 @@ Unlike textures, they are optimized for use as _render targets_ (i.e. when there
 
 #### Layered rendering
 
+(see)[https://www.khronos.org/opengl/wiki/Geometry_Shader#Layered_rendering]
+
 **TODO** (the GS send specific primitives to different layers of a layered framebuffer)
+
+#### GS Instancing
+
+(see)[https://www.khronos.org/opengl/wiki/Geometry_Shader#Instancing]
 
 ## Vertex specification
 
